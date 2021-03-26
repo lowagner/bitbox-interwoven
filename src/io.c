@@ -8,17 +8,6 @@
 
 #define RECENT_MUSIC_FILE "LASTM16.TXT"
 
-// OLD DEPRECATE
-#define INSTRUMENTS_BYTE_OFFSET_OLD (2*16)
-#define INSTRUMENTS_BYTE_STRIDE_OLD (17)
-#define INSTRUMENTS_BYTE_LENGTH_OLD (16 * INSTRUMENTS_BYTE_STRIDE_OLD)
-#define TRACKS_BYTE_OFFSET_OLD (32 + 16 + sizeof(instrument))
-#define TRACKS_BYTE_STRIDE_OLD (sizeof(chip_track[0])/2)
-#define TRACKS_BYTE_LENGTH_OLD (sizeof(chip_track)/2) // Note the divide by 2!
-#define SONG_BYTE_OFFSET_OLD (TRACKS_BYTE_OFFSET_OLD + TRACKS_BYTE_LENGTH_OLD)
-#define SONG_BYTE_LENGTH_OLD (1 + 2 * 60)
-
-// NEW:
 #define INSTRUMENTS_BYTE_OFFSET (0)
 #define INSTRUMENTS_BYTE_STRIDE (1 /* drum/octave */ + MAX_INSTRUMENT_LENGTH /* commands */)
 #define INSTRUMENTS_BYTE_LENGTH (16 /* # instruments */ * INSTRUMENTS_BYTE_STRIDE)
@@ -55,18 +44,18 @@
     io_error_t ferr = io_save_recent_song_filename(); \
     if (ferr) \
         return ferr; \
-    message("opening %s to load " #name " %d / 16 with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE_OLD); \
+    message("opening %s to load " #name " %d / 16 with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE); \
     fat_result = f_open(&fat_file, (char *)full_song_filename, FA_READ | FA_OPEN_EXISTING); \
     if (fat_result != FR_OK) \
         return IoOpenError; \
     if (i >= 16) \
-    {   f_lseek(&fat_file, name##_BYTE_OFFSET_OLD); \
+    {   f_lseek(&fat_file, name##_BYTE_OFFSET); \
         for (i=0; i<16; ++i) \
           if ((ferr = _io_load_##name(i))) \
             break; \
     } \
     else \
-    {   f_lseek(&fat_file, name##_BYTE_OFFSET_OLD + i*(name##_BYTE_STRIDE_OLD));  \
+    {   f_lseek(&fat_file, name##_BYTE_OFFSET + i*(name##_BYTE_STRIDE));  \
         ferr = _io_load_##name(i); \
     } \
     f_close(&fat_file); \
@@ -127,7 +116,6 @@ void io_message_from_error(uint8_t *msg, io_error_t error, io_event_t attempt)
 io_error_t io_init()
 {   // Initializes the input-output module.  Can return an error if filesystem not mountable.
     saved_base_song_filename[0] = 0;
-    ASSERT(TRACKS_BYTE_STRIDE_OLD * 2 == TRACKS_BYTE_STRIDE);
     fat_result = f_mount(&fat_fs, "", 1); // mount now...
     if (fat_result != FR_OK)
     {   io_mounted = 0;
@@ -193,7 +181,7 @@ static io_error_t io_save_recent_song_filename()
             continue;
         }
         full_song_filename[i] = '.';
-        full_song_filename[++i] = 'G'; // TODO: switch back to M16 after OLD deprecation
+        full_song_filename[++i] = 'M';
         full_song_filename[++i] = '1';
         full_song_filename[++i] = '6';
         full_song_filename[++i] = 0;
@@ -333,10 +321,10 @@ io_error_t _io_load_TRACKS(unsigned int i)
 {   // Loads a track.  i should be between 0 and 15 (inclusive).
     message(">> loading track %d\n", i);
     UINT bytes_get; 
-    fat_result = f_read(&fat_file, chip_track[i], TRACKS_BYTE_STRIDE_OLD, &bytes_get);
+    fat_result = f_read(&fat_file, chip_track[i], TRACKS_BYTE_STRIDE, &bytes_get);
     if (fat_result != FR_OK)
         return IoReadError;
-    if (bytes_get != TRACKS_BYTE_STRIDE_OLD)
+    if (bytes_get != TRACKS_BYTE_STRIDE)
         return IoMissingDataError;
     return IoNoError;
 }
@@ -378,7 +366,7 @@ io_error_t io_load_song()
     if (fat_result)
         return IoOpenError;
     
-    f_lseek(&fat_file, SONG_BYTE_OFFSET_OLD);
+    f_lseek(&fat_file, SONG_BYTE_OFFSET);
 
     UINT bytes_get; 
     fat_result = f_read(&fat_file, &song_length, 1, &bytes_get);
