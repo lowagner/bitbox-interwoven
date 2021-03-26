@@ -1,7 +1,7 @@
 #ifndef SPRITE_H
 #define SPRITE_H
 
-#include "<stdint.h>"
+#include <stdint.h>
 
 #define MAX_SPRITES 128 // needs to be strictly less than 256.  technically we use 1 as the head of the linked list.
 

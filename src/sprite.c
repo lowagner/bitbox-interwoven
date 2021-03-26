@@ -1,3 +1,5 @@
+#include "bitbox.h"
+#include "game.h"
 #include "sprite.h"
 
 #include <stdlib.h> // rand
@@ -121,6 +123,7 @@ void sprite_line()
 
     // check to remove sprites first, since that will make the list smaller when adding to it
     uint8_t visible = sprite[0].next_visible;
+    int16_t vga16 = vga_line;
     while (visible)
     {   int bottom16 = sprite[visible].iy + sprite[visible].height;
         if (vga16 >= bottom16)
@@ -140,7 +143,6 @@ void sprite_line()
     }
 
     // add sprites:
-    int16_t vga16 = (int16_t) vga_line;
     uint8_t check_next_for_visible = sprite[0].check_next_for_visible;
     while (!check_next_for_visible)
     {   const struct sprite *maybe_next = &sprite[check_next_for_visible];
@@ -173,8 +175,8 @@ static inline float sprite_compare(uint8_t index1, uint8_t index2)
 {   // return <0 if sprite[index1] should go before sprite[index2] in the draw order,
     // return >0 if sprite[index1] should go after sprite[index2] in the draw order,
     // return  0 if they are equal in draw order.
-    const sprite *sprite1 = &sprite[index1];
-    const sprite *sprite2 = &sprite[index2];
+    const struct sprite *sprite1 = &sprite[index1];
+    const struct sprite *sprite2 = &sprite[index2];
     int16_t compare_iy = sprite1->iy - sprite2->iy;
     if (compare_iy == 0)
     {   // sprite1->iy == sprite2->iy
@@ -225,14 +227,7 @@ static inline void sprite_push_back_to_sort(uint8_t sort_this)
 }
 
 void sprite_frame()
-{
-    uint8_t current = sprite[0].next_to_draw;
-    int index = -1;
-    while (current)
-    {   // add all sprites to the sort list:
-        sprite_to_sort[++index] = current;
-        current = sprite[current].next_to_draw;
-    }
+{   // Puts all sprites into order based on when they will first appear on-screen in the y direction.
 
     // TODO: use qsort if we're having difficulties keeping CPU within bitbox requirements
     // insertion sort all the drawing sprites on the map
@@ -260,7 +255,7 @@ void sprite_frame()
     }
 
 finish_sprite_frame:
-    sprite[0].check_next_for_visible = sprites[0].next_to_draw;
+    sprite[0].check_next_for_visible = sprite[0].next_to_draw;
     sprite[0].next_visible = 0;
     sprite[0].previous_visible = 0;
 }

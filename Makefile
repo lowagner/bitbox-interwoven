@@ -3,7 +3,8 @@
 USE_SDCARD = 1      # allow use of SD card for io
 
 NAME = inwoven
-SRC_FILES = chip edit-instrument edit-song edit-track font game io name
+SRC_FILES = chip edit-instrument edit-song edit-track font game io name \
+            sprite
 DEFINES += VGA_MODE=320
 
 GAME_C_FILES=$(SRC_FILES:%=src/%.c)
