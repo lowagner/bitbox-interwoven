@@ -127,6 +127,7 @@ void io_message_from_error(uint8_t *msg, io_error_t error, io_event_t attempt)
 io_error_t io_init()
 {   // Initializes the input-output module.  Can return an error if filesystem not mountable.
     saved_base_song_filename[0] = 0;
+    ASSERT(TRACKS_BYTE_STRIDE_OLD * 2 == TRACKS_BYTE_STRIDE);
     fat_result = f_mount(&fat_fs, "", 1); // mount now...
     if (fat_result != FR_OK)
     {   io_mounted = 0;
@@ -173,6 +174,7 @@ static io_error_t io_save_recent_song_filename()
     // Also updates full_song_filename to have the correct name (from base_song_filename) and extension for
     // saving/loading a song, so this method must be called before doing any FatFS manipulation
     // in all other save/load music functions.
+    message("checking if we need to update recent song filename: %s\n", base_song_filename);
     int filename_len = strlen((char *)base_song_filename);
     if (filename_len == 0)
         return IoConstraintError;
@@ -183,6 +185,7 @@ static io_error_t io_save_recent_song_filename()
     if (strcmp((char *)saved_base_song_filename, (char *)base_song_filename) == 0 && chip_volume == saved_chip_volume)
         return IoNoError; // don't rewrite  
 
+    message(">> saving recent song filename to disk...\n");
     for (int i=0; i<8; ++i)
     {   // Copy over base_song_filename to full_song_filename:
         if (base_song_filename[i] != 0)
@@ -227,6 +230,7 @@ static io_error_t io_save_recent_song_filename()
 
 io_error_t io_load_recent_song_filename()
 {   // Loads the song name and volume from the RECENT_MUSIC_FILE file.
+    message("loading recent song filename\n");
     if (io_mounted == 0 && io_init())
         return IoMountError;
 
@@ -251,6 +255,7 @@ io_error_t io_load_recent_song_filename()
             base_song_filename[i] = 0;
             if (++i < bytes_get)
                 chip_volume = buffer[i];
+            message(">> got volume %d and recent song filename: \"%s\"\n", chip_volume, base_song_filename);
             return IoNoError;
         }
         if (i < 8)
@@ -263,6 +268,7 @@ io_error_t io_load_recent_song_filename()
         ++i;
     }
     base_song_filename[i] = 0;
+    message(">> got recent song filename: \"%s\"\n", base_song_filename);
     return IoNoError;
 }
 

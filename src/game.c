@@ -166,7 +166,7 @@ void game_set_message_with_timeout(const char *msg, int timeout)
 
     game_message[31] = 0;
     game_message_timeout = timeout;
-    message("in-game message: %s (expiring %d)\n", game_message, timeout);
+    message("[in-game message: \"%s\" (expiring %d)]\n", game_message, timeout);
 }
 
 #define BSOD_COLOR8 140
