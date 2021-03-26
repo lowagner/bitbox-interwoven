@@ -38,8 +38,7 @@ void game_init()
     if (error)
         io_message_from_error(game_message, error, IoTriedInit);
 
-    game_switch(ModeMainMenu);
-    game_set_message_with_timeout("oh no!!", 0);
+    game_switch(ModeNameSong);
 }
 
 void game_frame()
@@ -84,6 +83,20 @@ void graph_line()
     if (vga_odd)
         return;
 
+    if (game_message[0])
+    {   // Drawing the game message takes priority, nothing else can show up where that message goes:
+        unsigned int delta_y = vga_line - 220;
+        if (delta_y < 10)
+        {   memset(draw_buffer, 0, 2*SCREEN_W);
+            --delta_y;
+            if (delta_y < 8)
+            {   font_render_line_doubled(game_message, 36, (int)delta_y, 65535, 0);
+            }
+            // Don't allow any other drawing in this region...
+            return;
+        }
+    }
+
     switch (game_mode)
     {   // Run drawing logic depending on game mode.
         case ModeNameSong:
@@ -101,15 +114,6 @@ void graph_line()
         default:
             bsod_line();
             break;
-    }
-
-    // TODO: ensure no one else is using this space
-    // or just don't let anyone write stuff here if a message exists
-    if (game_message[0])
-    {   int delta_y = vga_line - 220;
-        if (delta_y >= 0 || delta_y < 8)
-        {   font_render_line_doubled(game_message, 36, delta_y, 65535, 0);
-        }
     }
 }
 

@@ -19,7 +19,7 @@ static const uint8_t allowed_chars[6][7] = {
     {'4', '5', '6', '7', '8', '9', 0},
 };
 
-#define NUMBER_LINES 14
+#define NUMBER_ROWS 14
 #define BOX_COLOR RGB(205, 100, 0)
 #define MATRIX_WING_COLOR RGB(255, 255, 0)
 
@@ -31,42 +31,42 @@ game_mode_t name_mode_after_naming;
 void name_start(game_mode_t next_mode, uint8_t *name, int max_length)
 {   // Initializes name GUI to modify the passed-in name, and send back to
     // `next_mode` after finishing.  Also ensures putting a null-terminator before max_length.
+    // TODO: allow lower-case letters as an option, but not for file names
+    // TODO: allow passing in a title.  e.g. "choose your name"
     name_mode_after_naming = next_mode;
     name_to_modify = name;
     name_max_length = max_length;
     // Ensure name is under a certain length:
     int i;
     for (i = 0; i < name_max_length - 1; ++i)
-    if (name[i] == 0)
-        break;
+    {   if (name[i] == 0)
+            break;
+    }
     name[i] = 0;
     name_position = i;
+    message("starting name_start with name = \"%s\" / %d\n", name, max_length);
 }
 
 void name_line()
-{
+{   // Draw the GUI for the choose-name mode:
     if (vga_line < 22)
-    {
+    {   // Show a blank strip across the top:
         if (vga_line/2 == 0)
             memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
         return;
     }
-    else if (vga_line/2 == (SCREEN_H - 20)/2)
-    {
-        memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
-        return;
-    }
-    else if (vga_line >= 22 + NUMBER_LINES*10)
-    {   // TODO: what is this???
-        if (vga_line/2 == (22 + NUMBER_LINES*10)/2)
+    if (vga_line >= 22 + NUMBER_ROWS*10)
+    {   // Draw a blank line across the bottom of the page:
+        if (vga_line/2 == (22 + NUMBER_ROWS*10)/2)
             memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
         return;
     }
     int row = (vga_line-22) / 10;
     int delta_y = (vga_line-22) % 10;
-    if (delta_y == 0 || delta_y == 9)
+    if (delta_y >= 8)
     {
         memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
+        if (delta_y % 2) return;
         // also check for character selector
         if (row == 0)
         {
@@ -95,7 +95,7 @@ void name_line()
             *dst++ = color;
             *dst++ = color;
         }
-        else if (row == 6 && delta_y == 9)
+        else if (row == 6 && delta_y == 8)
         {
             uint16_t *dst = draw_buffer + 1 + name_x * 9 + OFFSET_X;
             const uint16_t color = MATRIX_WING_COLOR;
@@ -109,60 +109,11 @@ void name_line()
             *dst++ = color;
         }
     }
-    else
-    {
-        --delta_y;
-        if (row == 0)
-        {
-            font_render_line_doubled((const uint8_t *)"file:", 16, delta_y, 65535, BG_COLOR*257);
+    else switch (row)
+    {   case 0:
+            font_render_line_doubled((const uint8_t *)"name:", 16, delta_y, 65535, BG_COLOR*257);
             font_render_line_doubled(name_to_modify, TEXT_OFFSET, delta_y, 65535, BG_COLOR*257);
-        }
-        else if (row <= 6)
-        {
-            font_render_line_doubled((const uint8_t *)allowed_chars[row-1], OFFSET_X, delta_y, 65535, BG_COLOR*257);
-            if (row-1 == name_y)
-            {
-                if (name_x < 5)
-                {
-                    {
-                    uint16_t *dst = draw_buffer + (name_x * 9 + OFFSET_X);
-                    const uint16_t color = BOX_COLOR;
-                    *dst = color;
-                    dst += 9;
-                    *dst = color;
-                    }
-                    {
-                    uint32_t *dst = (uint32_t *)draw_buffer + (1 + 6 * 9 + OFFSET_X)/2;
-                    const uint32_t color = MATRIX_WING_COLOR | ((BG_COLOR*257)<<16);
-                    *dst++ = color;
-                    *dst++ = color;
-                    *dst++ = color;
-                    *dst++ = color;
-                    *dst++ = color;
-                    }
-                }
-                else
-                {
-                    {
-                    uint16_t *dst = draw_buffer + (name_x * 9 + OFFSET_X);
-                    const uint16_t color = BOX_COLOR;
-                    *dst = color;
-                    }
-                    {
-                    uint32_t *dst = (uint32_t *)draw_buffer + (1 + 6 * 9 + OFFSET_X)/2;
-                    const uint32_t color = BOX_COLOR | ((BG_COLOR*257)<<16);
-                    *dst++ = color;
-                    *dst++ = color;
-                    *dst++ = color;
-                    *dst++ = color;
-                    *dst++ = color;
-                    }
-                }
-            }
-        }
-        else
-        switch (row)
-        {
+            break;
         case 7:
             font_render_line_doubled((const uint8_t *)"A:insert Y:overwrite", 16, delta_y, 65535, BG_COLOR*257);
             break;
@@ -175,7 +126,50 @@ void name_line()
         case 11:
             font_render_line_doubled((const uint8_t *)"start:finish", 16, delta_y, 65535, BG_COLOR*257);
             break;
-        }
+        default:
+            if (row > 6)
+                break;
+            font_render_line_doubled((const uint8_t *)allowed_chars[row-1], OFFSET_X, delta_y, 65535, BG_COLOR*257);
+
+            if (row-1 != name_y)
+                break;
+            if (name_x < 5)
+            {
+                {
+                uint16_t *dst = draw_buffer + (name_x * 9 + OFFSET_X);
+                const uint16_t color = BOX_COLOR;
+                *dst = color;
+                dst += 9;
+                *dst = color;
+                }
+                {
+                uint32_t *dst = (uint32_t *)draw_buffer + (1 + 6 * 9 + OFFSET_X)/2;
+                const uint32_t color = MATRIX_WING_COLOR | ((BG_COLOR*257)<<16);
+                *dst++ = color;
+                *dst++ = color;
+                *dst++ = color;
+                *dst++ = color;
+                *dst++ = color;
+                }
+            }
+            else
+            {
+                {
+                uint16_t *dst = draw_buffer + (name_x * 9 + OFFSET_X);
+                const uint16_t color = BOX_COLOR;
+                *dst = color;
+                }
+                {
+                uint32_t *dst = (uint32_t *)draw_buffer + (1 + 6 * 9 + OFFSET_X)/2;
+                const uint32_t color = BOX_COLOR | ((BG_COLOR*257)<<16);
+                *dst++ = color;
+                *dst++ = color;
+                *dst++ = color;
+                *dst++ = color;
+                *dst++ = color;
+                }
+            }
+            break;
     }
 }
 

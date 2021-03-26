@@ -7,9 +7,9 @@
 #define SCREEN_H 240
 
 #ifdef EMULATOR
-#define ASSERT(x) {if (!x) {message(#x " was not true!\n");}}
+#define ASSERT(x) {if (!(x)) {message(#x " was not true!\n");}}
 #else
-#define ASSERT(x) (void);
+#define ASSERT(x) {}
 #endif
 
 #define GAMEPAD_PRESS_WAIT 8

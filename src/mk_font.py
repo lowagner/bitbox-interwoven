@@ -1068,12 +1068,19 @@ void font_render_line_doubled(const uint8_t *text, int x, int delta_y, uint16_t 
     #ifdef EMULATOR
     if (delta_y < 0 || delta_y >= 8)
     {
-        message("invalid internal line for text: %d\\n", delta_y);
+        message("invalid internal line for text %s: %d\\n", (const char *)text, delta_y);
+        bitbox_die(-1, 0);
         return;
     }
-    if (x < 0 || x + 9*strlen((char *)text) >= SCREEN_W)
+    int text_end_x = x + 9*strlen((const char *)text);
+    if (x < 0 || text_end_x >= SCREEN_W)
     {
-        message("text (%s) goes off screen!\\n", text);
+        message("text (%s) goes off screen! %d<->%d max %d\\n", (const char *)text, x, text_end_x, SCREEN_W);
+        for (int i = 0; i < 40; ++i) {
+            message(" %d -> %c\\n", i, text[i]);
+            if (text[i] == 0) break;
+        }
+        bitbox_die(-1, 0);
         return;
     }
     #endif
@@ -1103,12 +1110,19 @@ void font_render_no_bg_line_doubled(const uint8_t *text, int x, int delta_y, uin
     #ifdef EMULATOR
     if (delta_y < 0 || delta_y >= 8)
     {
-        message("invalid internal line for text: %d\\n", delta_y);
+        message("invalid internal line for text %s: %d\\n", (const char *)text, delta_y);
+        bitbox_die(-1, 0);
         return;
     }
-    if (x < 0 || x + 9*strlen((char *)text) >= SCREEN_W)
+    int text_end_x = x + 9*strlen((const char *)text);
+    if (x < 0 || text_end_x >= SCREEN_W)
     {
-        message("text (%s) goes off screen!\\n", text);
+        message("text (%s) goes off screen! %d<->%d max %d\\n", (const char *)text, x, text_end_x, SCREEN_W);
+        for (int i = 0; i < 40; ++i) {
+            message(" %d -> %c\\n", i, text[i]);
+            if (text[i] == 0) break;
+        }
+        bitbox_die(-1, 0);
         return;
     }
     #endif
