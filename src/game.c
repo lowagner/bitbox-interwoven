@@ -34,9 +34,14 @@ void game_init()
     editSong_init();
     editTrack_init();
     editInstrument_init();
-    file_error_t error = io_init();
+    io_error_t error = io_init();
     if (error)
-        io_message_from_error(game_message, error, IoTriedInit);
+        io_message_from_error(game_message, error, IoEventInit);
+    else
+    {   error = io_load_recent_song_filename();
+        if (error)
+            message("couldn't load recent song filename\n");
+    }
 
     game_switch(ModeNameSong);
 }
@@ -137,7 +142,7 @@ void game_switch(game_mode_t new_game_mode)
             );
             break;
         case ModeEditSong:
-            editSong_start();
+            editSong_start(previous_game_mode == ModeNameSong);
             break;
         default:
             break;
@@ -155,9 +160,13 @@ void game_switch_to_previous_or(game_mode_t new_game_mode)
 void game_set_message_with_timeout(const char *msg, int timeout)
 {   // Sets a game message where everyone can see it, with a timeout.
     // use timeout=0 for a permanent message (at least until changed).
-    strncpy((char *)game_message, msg, 31);
+    // You may pass in a msg of NULL if you've already manipulated game_message directly.
+    if (msg)
+        strncpy((char *)game_message, msg, 31);
+
     game_message[31] = 0;
     game_message_timeout = timeout;
+    message("in-game message: %s (expiring %d)\n", game_message, timeout);
 }
 
 #define BSOD_COLOR8 140

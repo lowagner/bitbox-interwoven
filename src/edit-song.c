@@ -44,6 +44,8 @@ uint8_t editSong_offset;
 uint8_t editSong_color[2];
 uint8_t editSong_last_painted;
 
+static inline void editSong_save_or_load_all(io_event_t save_or_load);
+
 void editSong_init()
 {
     song_speed = 4;
@@ -52,7 +54,7 @@ void editSong_init()
     editSong_color[0] = 1;
 }
 
-void editSong_start()
+void editSong_start(int load_song)
 {   // Set the palette to something reasonable.
     // TODO: maybe have this logic in a palette.c...
     static const uint16_t colors[16] = {
@@ -74,6 +76,9 @@ void editSong_start()
         RGB(28, 20, 40),
     };
     memcpy(game_palette, colors, sizeof(colors));
+    if (load_song)
+    {   editSong_save_or_load_all(IoEventLoad);
+    }
 }
 
 void editSong_load_default()
@@ -340,9 +345,9 @@ void editSong_line()
             break;
         case 15:
             if (music_editor_in_menu)
-                font_render_line_doubled((uint8_t *)"start:edit editSong", 16, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"start:edit song", 16, internal_line, 65535, BG_COLOR*257);
             else
-                font_render_line_doubled((uint8_t *)"start:editSong menu", 16, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"start:song menu", 16, internal_line, 65535, BG_COLOR*257);
             break;        
         case 16:
             if (music_editor_in_menu)
@@ -395,62 +400,13 @@ void editSong_controls()
             return;
         }
         
-        int save_or_load = 0;
+        io_event_t save_or_load = IoEventNone;
         if (GAMEPAD_PRESS(0, A))
-            save_or_load = 1; // save
+            save_or_load = IoEventSave;
         if (GAMEPAD_PRESS(0, B))
-            save_or_load = 2; // load
+            save_or_load = IoEventLoad;
         if (save_or_load)
-        {   file_error_t error = IoNoError;
-            if (save_or_load == 1)
-            {   // Split up saving into different pieces;
-                // The bitbox struggles to save all at once.
-                error = io_save_song();
-                if (error)
-                {   strcpy((char *)game_message, "song ");
-                    io_message_from_error(game_message+5, error, 1);
-                    return;
-                }
-                error = io_save_track(16);
-
-                if (error)
-                {   strcpy((char *)game_message, "track ");
-                    io_message_from_error(game_message+6, error, 1);
-                    return;
-                }
-
-                error = io_save_instrument(16);
-                if (error)
-                {   strcpy((char *)game_message, "instr. ");
-                    io_message_from_error(game_message+7, error, 1);
-                }
-                else
-                    io_message_from_error(game_message, IoNoError, 1);
-            }
-            else
-            {   // Load all pieces separately to avoid taxing bitbox too much.
-                error = io_load_song();
-                if (error)
-                {   strcpy((char *)game_message, "song ");
-                    io_message_from_error(game_message+5, error, 2);
-                    return;
-                }
-
-                error = io_load_track(16);
-                if (error)
-                {   strcpy((char *)game_message, "track ");
-                    io_message_from_error(game_message+6, error, 2);
-                    return;
-                }
-
-                error = io_load_instrument(16);
-                if (error)
-                {   strcpy((char *)game_message, "instr. ");
-                    io_message_from_error(game_message+7, error, 2);
-                }
-                else
-                    io_message_from_error(game_message, IoNoError, 2);
-            }
+        {   editSong_save_or_load_all(save_or_load);
             return;
         }
 
@@ -593,3 +549,59 @@ void editSong_controls()
     } 
 }
 
+static inline void editSong_save_or_load_all(io_event_t save_or_load)
+{   io_error_t error;
+    if (save_or_load == IoEventSave)
+    {   // Split up saving into different pieces;
+        // The bitbox struggles to save all at once.
+        error = io_save_song();
+        if (error)
+        {   strcpy((char *)game_message, "song ");
+            io_message_from_error(game_message+5, error, IoEventSave);
+            return;
+        }
+        error = io_save_track(16);
+
+        if (error)
+        {   strcpy((char *)game_message, "track ");
+            io_message_from_error(game_message+6, error, IoEventSave);
+            return;
+        }
+
+        error = io_save_instrument(16);
+        if (error)
+        {   strcpy((char *)game_message, "instr. ");
+            io_message_from_error(game_message+7, error, IoEventSave);
+        }
+        else
+            io_message_from_error(game_message, IoNoError, IoEventSave);
+    }
+    else if (save_or_load == IoEventLoad)
+    {   // Load all pieces separately to avoid taxing bitbox too much.
+        error = io_load_song();
+        if (error)
+        {   strcpy((char *)game_message, "song ");
+            io_message_from_error(game_message+5, error, IoEventLoad);
+            return;
+        }
+
+        error = io_load_track(16);
+        if (error)
+        {   strcpy((char *)game_message, "track ");
+            io_message_from_error(game_message+6, error, IoEventLoad);
+            return;
+        }
+
+        error = io_load_instrument(16);
+        if (error)
+        {   strcpy((char *)game_message, "instr. ");
+            io_message_from_error(game_message+7, error, IoEventLoad);
+        }
+        else
+            io_message_from_error(game_message, IoNoError, IoEventLoad);
+    }
+    else
+        message("invalid save_or_load for editSong_save_or_load_all()\n");
+
+    game_set_message_with_timeout(NULL, 1000);
+}

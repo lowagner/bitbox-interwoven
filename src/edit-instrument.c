@@ -902,27 +902,23 @@ static inline void editInstrument_menu_controls()
         }
     }
 
-    int save_or_load = 0;
+    io_event_t save_or_load = IoEventNone;
     if (GAMEPAD_PRESS(0, A))
-    {
-        // save
-        if (editInstrument_bad)
+    {   if (editInstrument_bad)
             return game_set_message_with_timeout("can't save bad jump.", MESSAGE_TIMEOUT);
-        save_or_load = 1;
+        save_or_load = IoEventSave;
     }
     if (GAMEPAD_PRESS(0, B))
-        save_or_load = 2; // load
+        save_or_load = IoEventLoad;
     if (save_or_load)
-    {
-        if (editInstrument_copying < 16)
-        {
-            // cancel a copy 
+    {   if (editInstrument_copying < 16)
+        {   // cancel the copy instead of saving
             editInstrument_copying = 16;
             return;
         }
 
-        file_error_t error = IoNoError;
-        if (save_or_load == 1)
+        io_error_t error;
+        if (save_or_load == IoEventSave)
             error = io_save_instrument(editInstrument_instrument);
         else
         {

@@ -802,7 +802,7 @@ void editTrack_controls()
                 return;
             }
 
-            file_error_t error;
+            io_error_t error;
             if (save_or_load == 1)
                 error = io_save_track(editTrack_track);
             else

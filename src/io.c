@@ -10,33 +10,36 @@
 
 // OLD DEPRECATE
 #define INSTRUMENTS_BYTE_OFFSET_OLD (2*16)
-#define INSTRUMENTS_BYTE_LENGTH_OLD (16+sizeof(instrument))
+#define INSTRUMENTS_BYTE_STRIDE_OLD (17)
+#define INSTRUMENTS_BYTE_LENGTH_OLD (16 * INSTRUMENTS_BYTE_STRIDE_OLD)
 #define TRACKS_BYTE_OFFSET_OLD (INSTRUMENTS_BYTE_OFFSET_OLD + INSTRUMENTS_BYTE_LENGTH_OLD)
+#define TRACKS_BYTE_STRIDE_OLD (sizeof(chip_track[0])/2)
 #define TRACKS_BYTE_LENGTH_OLD (sizeof(chip_track)/2) // Note the divide by 2!
 #define SONG_BYTE_OFFSET_OLD (TRACKS_BYTE_OFFSET_OLD + TRACKS_BYTE_LENGTH_OLD)
 #define SONG_BYTE_LENGTH_OLD (1 + 2 * 60)
 
 // NEW:
 #define INSTRUMENTS_BYTE_OFFSET (0)
-#define INSTRUMENTS_BYTE_STRIDE (1 /* drum/octave */ + 16 /* commands */)
+#define INSTRUMENTS_BYTE_STRIDE (1 /* drum/octave */ + MAX_INSTRUMENT_LENGTH /* commands */)
 #define INSTRUMENTS_BYTE_LENGTH (16 /* # instruments */ * INSTRUMENTS_BYTE_STRIDE)
 #define TRACKS_BYTE_OFFSET (INSTRUMENTS_BYTE_OFFSET + INSTRUMENTS_BYTE_LENGTH)
-#define TRACKS_BYTE_STRIDE (4 /* # players */ * 64 /* max expansion of track size */)
+#define TRACKS_BYTE_STRIDE (4 /* # players */ * MAX_TRACK_LENGTH)
 #define TRACKS_BYTE_LENGTH (16 /* tracks 0-f */ * TRACKS_BYTE_STRIDE)
 #define SONG_BYTE_OFFSET (TRACKS_BYTE_OFFSET + TRACKS_BYTE_LENGTH)
 #define SONG_BYTE_LENGTH (1 /* length of song */ + sizeof(chip_song))
 #define TOTAL_FILE_SIZE (SONG_BYTE_OFFSET + SONG_BYTE_LENGTH)
 
-#define SAVE_INDEXED(name, total) \
-    file_error_t ferr = io_save_recent_song_filename(); \
+#define SAVE_INDEXED(name, i) \
+    io_error_t ferr = io_save_recent_song_filename(); \
     if (ferr) \
         return ferr; \
+    message("opening %s to load " #name " %d / 16 with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE); \
     ferr = io_open_or_zero_file(full_song_filename, TOTAL_FILE_SIZE); \
     if (ferr) \
         return ferr; \
-    if (i >= (total)) \
+    if (i >= 16) \
     {   f_lseek(&fat_file, name##_BYTE_OFFSET); \
-        for (i=0; i<(total); ++i) \
+        for (i=0; i<16; ++i) \
           if ((ferr = _io_save_##name(i))) \
             break; \
     } \
@@ -45,25 +48,25 @@
         ferr = _io_save_##name(i); \
     } \
     f_close(&fat_file); \
+    message("done loading " #name "\n"); \
     return ferr
 
-#define LOAD_INDEXED(name, stride, total) \
-    file_error_t ferr = io_save_recent_song_filename(); \
+#define LOAD_INDEXED(name, i) \
+    io_error_t ferr = io_save_recent_song_filename(); \
     if (ferr) \
         return ferr; \
+    message("opening %s to load " #name " %d / 16 with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE_OLD); \
     fat_result = f_open(&fat_file, (char *)full_song_filename, FA_READ | FA_OPEN_EXISTING); \
     if (fat_result != FR_OK) \
         return IoOpenError; \
-    if (i >= (total)) \
-    { \
-        f_lseek(&fat_file, name##_BYTE_OFFSET_OLD); \
-        for (i=0; i<(total); ++i) \
+    if (i >= 16) \
+    {   f_lseek(&fat_file, name##_BYTE_OFFSET_OLD); \
+        for (i=0; i<16; ++i) \
           if ((ferr = _io_load_##name(i))) \
             break; \
     } \
     else \
-    { \
-        f_lseek(&fat_file, name##_BYTE_OFFSET_OLD + i*(stride));  \
+    {   f_lseek(&fat_file, name##_BYTE_OFFSET_OLD + i*(name##_BYTE_STRIDE_OLD));  \
         ferr = _io_load_##name(i); \
     } \
     f_close(&fat_file); \
@@ -82,12 +85,13 @@ uint8_t base_song_filename[9];
 uint8_t full_song_filename[13];
 
 // TODO: add parameter n for how many bytes can be copied into msg
-void io_message_from_error(uint8_t *msg, file_error_t error, file_event_t attempt)
+void io_message_from_error(uint8_t *msg, io_error_t error, io_event_t attempt)
 {   // Copies a short error message into msg based on file error, depending on save or load
     // msg is assumed to be `game_message` (or a small offset away), so we also set game_message_timeout
     switch (error)
     {   case IoNoError:
-            if (attempt == IoTriedSave)
+            // TODO: support other io_event_t types
+            if (attempt == IoEventSave)
                 strcpy((char *)msg, "saved!");
             else
                 strcpy((char *)msg, "loaded!");
@@ -120,7 +124,7 @@ void io_message_from_error(uint8_t *msg, file_error_t error, file_event_t attemp
     game_message_timeout = 0;
 }
 
-file_error_t io_init()
+io_error_t io_init()
 {   // Initializes the input-output module.  Can return an error if filesystem not mountable.
     saved_base_song_filename[0] = 0;
     fat_result = f_mount(&fat_fs, "", 1); // mount now...
@@ -132,7 +136,7 @@ file_error_t io_init()
     return IoNoError;
 }
 
-static file_error_t io_open_or_zero_file(const uint8_t *fname, unsigned int size)
+static io_error_t io_open_or_zero_file(const uint8_t *fname, unsigned int size)
 {   // Opens a file, or creates a new file with zeros with a given size
     // so that we can seek to write anywhere within that size.
     // Leaves the file open for users to write to.
@@ -164,7 +168,7 @@ static file_error_t io_open_or_zero_file(const uint8_t *fname, unsigned int size
     return IoNoError;
 }
 
-static file_error_t io_save_recent_song_filename()
+static io_error_t io_save_recent_song_filename()
 {   // Saves base_song_filename to a recent music file so that we can load it without user-input on next boot.
     // Also updates full_song_filename to have the correct name (from base_song_filename) and extension for
     // saving/loading a song, so this method must be called before doing any FatFS manipulation
@@ -186,7 +190,7 @@ static file_error_t io_save_recent_song_filename()
             continue;
         }
         full_song_filename[i] = '.';
-        full_song_filename[++i] = 'M';
+        full_song_filename[++i] = 'G'; // TODO: switch back to M16 after OLD deprecation
         full_song_filename[++i] = '1';
         full_song_filename[++i] = '6';
         full_song_filename[++i] = 0;
@@ -221,8 +225,8 @@ static file_error_t io_save_recent_song_filename()
     return IoNoError;
 }
 
-static file_error_t io_load_recent_song_filename()
-{   // Loads the recent-music file from RECENT_MUSIC_FILE.
+io_error_t io_load_recent_song_filename()
+{   // Loads the song name and volume from the RECENT_MUSIC_FILE file.
     if (io_mounted == 0 && io_init())
         return IoMountError;
 
@@ -262,18 +266,19 @@ static file_error_t io_load_recent_song_filename()
     return IoNoError;
 }
 
-file_error_t io_load_recent_song()
+io_error_t io_load_recent_song()
 {   // Attempts to load the most recently-used song.
-    file_error_t error = io_load_recent_song_filename();
+    io_error_t error = io_load_recent_song_filename();
     if (error)
         return error;
     return io_load_song();
 }
 
-static file_error_t _io_load_INSTRUMENTS(unsigned int i)
+static io_error_t _io_load_INSTRUMENTS(unsigned int i)
 {   // Loads an instrument.  i should be between 0 and 15 (inclusive).
     UINT bytes_get;
     uint8_t read;
+    message(">> loading instrument %d\n", i);
     fat_result = f_read(&fat_file, &read, 1, &bytes_get);
     if (fat_result != FR_OK)
         return IoReadError;
@@ -290,7 +295,7 @@ static file_error_t _io_load_INSTRUMENTS(unsigned int i)
     return IoNoError;
 }
 
-static file_error_t _io_save_INSTRUMENTS(unsigned int i)
+static io_error_t _io_save_INSTRUMENTS(unsigned int i)
 {   // Saves an instrument.  i should be between 0 and 15 (inclusive).
     UINT bytes_get; 
     uint8_t write = (instrument[i].is_drum ? 1 : 0) | (instrument[i].octave << 4);
@@ -308,28 +313,29 @@ static file_error_t _io_save_INSTRUMENTS(unsigned int i)
     return IoNoError;
 }
 
-file_error_t io_load_instrument(unsigned int i)
+io_error_t io_load_instrument(unsigned int i)
 {   // Loads an instrument (or multiple if i >= 16).
-    LOAD_INDEXED(INSTRUMENTS, MAX_INSTRUMENT_LENGTH+1, 16);
+    LOAD_INDEXED(INSTRUMENTS, i);
 }
 
-file_error_t io_save_instrument(unsigned int i)
+io_error_t io_save_instrument(unsigned int i)
 {   // Saves an instrument (or multiple if i >= 16).
-    SAVE_INDEXED(INSTRUMENTS, 16);
+    SAVE_INDEXED(INSTRUMENTS, i);
 }
 
-file_error_t _io_load_TRACKS(unsigned int i)
+io_error_t _io_load_TRACKS(unsigned int i)
 {   // Loads a track.  i should be between 0 and 15 (inclusive).
+    message(">> loading track %d\n", i);
     UINT bytes_get; 
-    fat_result = f_read(&fat_file, chip_track[i], sizeof(chip_track[0]), &bytes_get);
+    fat_result = f_read(&fat_file, chip_track[i], TRACKS_BYTE_STRIDE_OLD, &bytes_get);
     if (fat_result != FR_OK)
         return IoReadError;
-    if (bytes_get != sizeof(chip_track[0]))
+    if (bytes_get != TRACKS_BYTE_STRIDE_OLD)
         return IoMissingDataError;
     return IoNoError;
 }
 
-file_error_t _io_save_TRACKS(unsigned int i)
+io_error_t _io_save_TRACKS(unsigned int i)
 {   // Saves a track.  i should be between 0 and 15 (inclusive).
     UINT bytes_get; 
     fat_result = f_write(&fat_file, chip_track[i], sizeof(chip_track[0]), &bytes_get);
@@ -340,17 +346,17 @@ file_error_t _io_save_TRACKS(unsigned int i)
     return IoNoError;
 }
 
-file_error_t io_load_track(unsigned int i)
+io_error_t io_load_track(unsigned int i)
 {   // Loads a track (or multiple if i >= 16).
-    LOAD_INDEXED(TRACKS, TRACKS_BYTE_LENGTH_OLD/16, 16);
+    LOAD_INDEXED(TRACKS, i);
 }
 
-file_error_t io_save_track(unsigned int i)
+io_error_t io_save_track(unsigned int i)
 {   // Saves a track (or multiple if i >= 16).
-    SAVE_INDEXED(TRACKS, 16);
+    SAVE_INDEXED(TRACKS, i);
 }
 
-file_error_t io_load_song()
+io_error_t io_load_song()
 {   // Loads the song.
 
     // set some defaults
@@ -358,7 +364,7 @@ file_error_t io_load_song()
     song_speed = 4;
     song_length = 16;
 
-    file_error_t ferr = io_save_recent_song_filename();
+    io_error_t ferr = io_save_recent_song_filename();
     if (ferr)
         return ferr;
 
@@ -405,10 +411,10 @@ file_error_t io_load_song()
     return IoNoError;
 }
 
-file_error_t io_save_song()
+io_error_t io_save_song()
 {   // Saves the song.
 
-    file_error_t ferr = io_save_recent_song_filename();
+    io_error_t ferr = io_save_recent_song_filename();
     if (ferr)
         return ferr;
 
