@@ -10,8 +10,7 @@
 #define MAX_INSTRUMENT_LENGTH 16
 #define DRUM_SECTION_LENGTH (MAX_INSTRUMENT_LENGTH/4)
 #define MAX_SONG_LENGTH 60
-// TODO: probably increase MAX_TRACK_LENGTH to 64:
-#define MAX_TRACK_LENGTH 32
+#define MAX_TRACK_LENGTH 64
 #define MAX_NOTE 84
 #define CHIP_PLAYERS 4
 
@@ -61,6 +60,7 @@ struct instrument
     uint8_t cmd[MAX_INSTRUMENT_LENGTH];
 };
 
+// TODO: preface with chip_
 extern struct instrument instrument[16];
 
 extern uint8_t chip_track[16][CHIP_PLAYERS][MAX_TRACK_LENGTH];
@@ -106,12 +106,16 @@ extern struct chip_player chip_player[CHIP_PLAYERS];
 
 extern uint16_t chip_song[MAX_SONG_LENGTH];
 
+// TODO: preface with chip_ and probably change pos to position or abs_position
 extern uint8_t track_pos;
+// TODO: preface with chip_
 extern uint8_t track_length;
 
+// TODO: preface with chip_
 extern uint8_t song_transpose;
 extern uint8_t song_length;
 extern uint8_t song_speed;
+// TODO: preface with chip_ and probably change pos to position or abs_position
 extern uint8_t song_pos;
 
 void chip_init();
@@ -119,9 +123,10 @@ void chip_reset();
 void chip_kill();
 void chip_play_song(int pos);
 void chip_play_track(int track);
+// TODO: chip_snapshot() and chip_restore() if people want to make a broken record sound
 
 // play a note of this instrument now - useful for SFX !
-void chip_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t track_volume);
+void chip_play_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t track_volume);
 
 // TODO: use an enum instead, e.g. InstrumentCommandType, with e.g. InstrumentPan
 #define BREAK 0
@@ -163,7 +168,9 @@ void chip_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t track_volume);
 #define TRACK_RANDOMIZE 14
 #define TRACK_JUMP 15
 
+// TODO: preface with chip_ 
 uint8_t instrument_max_index(uint8_t i, uint8_t j);
+// TODO: preface with chip_, switch to sequence_invalid instead of jump_bad
 int instrument_jump_bad(uint8_t inst, uint8_t max_index, uint8_t jump_from_index, uint8_t j);
 int track_jump_bad(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j);
 

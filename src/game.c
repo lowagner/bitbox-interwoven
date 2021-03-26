@@ -1,7 +1,12 @@
 #include "bitbox.h"
 #include "chip.h"
+#include "edit-instrument.h"
+#include "edit-song.h"
+#include "edit-track.h"
 #include "font.h"
 #include "game.h"
+#include "io.h"
+#include "name.h"
 
 uint16_t new_gamepad[2] CCM_MEMORY;
 uint16_t old_gamepad[2] CCM_MEMORY;
@@ -10,14 +15,14 @@ uint8_t gamepad_press_wait CCM_MEMORY;
 game_mode_t game_mode CCM_MEMORY; 
 game_mode_t previous_game_mode CCM_MEMORY;
 
-// The background color will be as a uint16_t equal to (bg_color8 | (bg_color8<<8)).
-// This color can be quickly painted using memset.
-uint8_t bg_color8 CCM_MEMORY;
-
+// Each sprite has access to 16 colors of the global palette based on a uint8_t offset,
+// E.g. palette_offset = 0 means that the sprite uses palette colors from 0 to 15,
+//      palette_offset = 230 means the sprite uses colors from 230 to 245.
+// The index into the palette should not be a u8, however, since a palette_offset of 255
+// should allow you to get all the way to palette index 270.
+uint16_t game_palette[255 + 15 + 1] CCM_MEMORY;
 uint8_t game_message[32] CCM_MEMORY;
 int game_message_timeout CCM_MEMORY;
-
-#define BSOD_COLOR8 140
 
 void game_init()
 {   // Logic run once when setting up the Bitbox; Bitbox will call this, don't do it yourself.
@@ -26,6 +31,12 @@ void game_init()
 
     chip_init();
     font_init();
+    editSong_init();
+    editTrack_init();
+    editInstrument_init();
+    file_error_t error = io_init();
+    if (error)
+        io_message_from_error(game_message, error, IoTriedInit);
 
     game_switch(ModeMainMenu);
     game_set_message_with_timeout("oh no!!", 0);
@@ -38,6 +49,18 @@ void game_frame()
 
     switch (game_mode)
     {   // Run frame logic depending on game mode.
+        case ModeNameSong:
+            name_controls();
+            break;
+        case ModeEditSong:
+            editSong_controls();
+            break;
+        case ModeEditTrack:
+            editTrack_controls();
+            break;
+        case ModeEditInstrument:
+            editInstrument_controls();
+            break;
         default:
             break;
     }
@@ -52,41 +75,77 @@ void game_frame()
         game_message[0] = 0; 
 }
 
-void bsod_line();
+static void bsod_line();
 
 void graph_line()
 {   // Logic to draw for each line on the VGA display; Bitbox will call this, don't do it yourself.
 
     // TODO: consider doing some non-drawing work on odd frames:
-    if (vga_odd) return;
+    if (vga_odd)
+        return;
 
     switch (game_mode)
     {   // Run drawing logic depending on game mode.
+        case ModeNameSong:
+            name_line();
+            break;
+        case ModeEditSong:
+            editSong_line();
+            break;
+        case ModeEditTrack:
+            editTrack_line();
+            break;
+        case ModeEditInstrument:
+            editInstrument_line();
+            break;
         default:
             bsod_line();
+            break;
     }
 
+    // TODO: ensure no one else is using this space
+    // or just don't let anyone write stuff here if a message exists
     if (game_message[0])
-        font_render_line_doubled(game_message, 36, 200, 65535, bg_color8 | (bg_color8<<8));
+    {   int delta_y = vga_line - 220;
+        if (delta_y >= 0 || delta_y < 8)
+        {   font_render_line_doubled(game_message, 36, delta_y, 65535, 0);
+        }
+    }
 }
 
 void game_switch(game_mode_t new_game_mode)
 {   // Switches to a new game mode.  Does nothing if already in that mode.
-    if (new_game_mode == game_mode) return;
+    if (new_game_mode == game_mode)
+        return;
 
     chip_kill();
 
     previous_game_mode = game_mode;
     game_mode = new_game_mode;
 
-    // TODO: run the game's start if needed
+    switch (game_mode)
+    {   // Run start-up logic depending on game mode.
+        case ModeNameSong:
+            name_start(
+                ModeEditSong,
+                base_song_filename,
+                sizeof(base_song_filename)
+            );
+            break;
+        case ModeEditSong:
+            editSong_start();
+            break;
+        default:
+            break;
+    }
 }
 
 void game_switch_to_previous_or(game_mode_t new_game_mode)
 {   // Switches to the previous mode (e.g. to jump back to somewhere you were before).
-    if (!previous_game_mode) return game_switch(new_game_mode);
+    if (previous_game_mode)
+        return game_switch(previous_game_mode);
 
-    game_switch(previous_game_mode);
+    game_switch(new_game_mode);
 }
 
 void game_set_message_with_timeout(const char *msg, int timeout)
@@ -97,7 +156,9 @@ void game_set_message_with_timeout(const char *msg, int timeout)
     game_message_timeout = timeout;
 }
 
-void bsod_line()
+#define BSOD_COLOR8 140
+
+static void bsod_line()
 {   // Draw a line for the blue-screen-of-death.
     int line = vga_line/10;
     int internal_line = vga_line%10;

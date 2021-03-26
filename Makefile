@@ -3,8 +3,7 @@
 USE_SDCARD = 1      # allow use of SD card for io
 
 NAME = inwoven
-# font files need to be first in order to be generated first:
-SRC_FILES = chip font game
+SRC_FILES = chip edit-instrument edit-song edit-track font game io name
 DEFINES += VGA_MODE=320
 
 GAME_C_FILES=$(SRC_FILES:%=src/%.c)
