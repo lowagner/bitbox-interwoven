@@ -41,73 +41,73 @@ void editInstrument_load_defaults()
     int i=0; // instrument 
     int ci = 0; // command index
     instrument[i].octave = 2;
-    instrument[i].cmd[ci] = PAN | (8<<4); 
-    instrument[i].cmd[++ci] = VOLUME | (15<<4); 
-    instrument[i].cmd[++ci] = WAVEFORM | (WfSaw<<4); 
-    instrument[i].cmd[++ci] = NOTE | (0<<4); 
-    instrument[i].cmd[++ci] = WAIT | (15<<4); 
-    instrument[i].cmd[++ci] = PAN | (1<<4); 
-    instrument[i].cmd[++ci] = NOTE | (4<<4); 
-    instrument[i].cmd[++ci] = WAIT | (4<<4); 
-    instrument[i].cmd[++ci] = PAN | (15<<4); 
-    instrument[i].cmd[++ci] = WAIT | (4<<4); 
-    instrument[i].cmd[++ci] = NOTE | (7<<4); 
-    instrument[i].cmd[++ci] = WAIT | (4<<4); 
-    instrument[i].cmd[++ci] = FADE_OUT | (15<<4); 
+    instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
+    instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentWaveform | (WfSaw<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentPan | (1<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (4<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
+    instrument[i].cmd[++ci] = InstrumentPan | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (7<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
+    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (15<<4); 
     
     i = 1;
     ci = 0;
     instrument[i].octave = 3;
-    instrument[i].cmd[ci] = PAN | (8<<4); 
-    instrument[i].cmd[++ci] = INERTIA | (15<<4); 
-    instrument[i].cmd[++ci] = VOLUME | (15<<4); 
-    instrument[i].cmd[++ci] = WAVEFORM | (WfSine<<4); 
-    instrument[i].cmd[++ci] = NOTE | (0<<4); 
-    instrument[i].cmd[++ci] = WAIT | (15<<4); 
-    instrument[i].cmd[++ci] = VIBRATO | (0xc<<4); 
-    instrument[i].cmd[++ci] = WAIT | (15<<4); 
-    instrument[i].cmd[++ci] = WAIT | (15<<4); 
-    instrument[i].cmd[++ci] = FADE_OUT | (1<<4); 
+    instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
+    instrument[i].cmd[++ci] = InstrumentInertia | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentWaveform | (WfSine<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentVibrato | (0xc<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (1<<4); 
     
     i = 2;
     ci = 0;
     instrument[i].octave = 4;
-    instrument[i].cmd[ci] = PAN | (8<<4); 
-    instrument[i].cmd[++ci] = VOLUME | (15<<4); 
-    instrument[i].cmd[++ci] = WAVEFORM | (WfNoise<<4); 
-    instrument[i].cmd[++ci] = WAIT | (3<<4); 
-    instrument[i].cmd[++ci] = WAVEFORM | (WfPulse<<4); 
-    instrument[i].cmd[++ci] = DUTY_DELTA | (6<<4); 
-    instrument[i].cmd[++ci] = FADE_OUT | (1<<4); 
-    instrument[i].cmd[++ci] = NOTE | (12<<4); 
-    instrument[i].cmd[++ci] = WAIT | (3<<4); 
-    instrument[i].cmd[++ci] = NOTE | (7<<4); 
-    instrument[i].cmd[++ci] = WAIT | (3<<4); 
-    instrument[i].cmd[++ci] = NOTE | (3<<4); 
-    instrument[i].cmd[++ci] = WAIT | (3<<4); 
-    instrument[i].cmd[++ci] = NOTE | (0<<4); 
-    instrument[i].cmd[++ci] = WAIT | (3<<4); 
-    instrument[i].cmd[++ci] = JUMP | (7<<4); 
+    instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
+    instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentWaveform | (WfNoise<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    instrument[i].cmd[++ci] = InstrumentWaveform | (WfPulse<<4); 
+    instrument[i].cmd[++ci] = InstrumentDutyDelta | (6<<4); 
+    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (1<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (12<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (7<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (3<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    instrument[i].cmd[++ci] = InstrumentJump | (7<<4); 
     
     i = 3;
     ci = 0; 
     instrument[i].octave = 3;
     instrument[i].is_drum = 1; // drums get MAX_INSTRUMENT_LENGTH/4 commands for each sub-instrument
-    instrument[i].cmd[ci] = WAIT | (5<<4); 
-    instrument[i].cmd[++ci] = WAVEFORM | (WfSine<<4); 
-    instrument[i].cmd[++ci] = NOTE | (0 << 4); 
-    instrument[i].cmd[++ci] = WAIT | (6<<4); 
-    instrument[i].cmd[++ci] = PAN | (1 << 4);  
-    instrument[i].cmd[++ci] = WAIT | (6<<4); 
-    instrument[i].cmd[++ci] = NOTE | (2 << 4); 
-    instrument[i].cmd[++ci] = FADE_OUT | (13<<4); // the first sub-instrument is long (8 commands) 
-    instrument[i].cmd[++ci] = PAN | (1<<4); 
-    instrument[i].cmd[++ci] = WAIT | (15<<4); 
-    instrument[i].cmd[++ci] = PAN | (15<<4); 
-    instrument[i].cmd[++ci] = FADE_OUT | (10<<4);  // that was the second sub-instrument
+    instrument[i].cmd[ci] = InstrumentWait | (5<<4); 
+    instrument[i].cmd[++ci] = InstrumentWaveform | (WfSine<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (0 << 4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (6<<4); 
+    instrument[i].cmd[++ci] = InstrumentPan | (1 << 4);  
+    instrument[i].cmd[++ci] = InstrumentWait | (6<<4); 
+    instrument[i].cmd[++ci] = InstrumentNote | (2 << 4); 
+    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (13<<4); // the first sub-instrument is long (8 commands) 
+    instrument[i].cmd[++ci] = InstrumentPan | (1<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentPan | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (10<<4);  // that was the second sub-instrument
     
-    instrument[i].cmd[++ci] = WAIT | (3<<4); 
-    instrument[i].cmd[++ci] = FADE_OUT | (15<<4); 
+    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (15<<4); 
     instrument[i].cmd[++ci] = 0; 
     instrument[i].cmd[++ci] = 0;  // that was the third (last) sub-instrument
 }
@@ -116,52 +116,52 @@ static void editInstrument_short_command_message(uint8_t *buffer, uint8_t cmd)
 {
     switch (cmd&15)
     {
-        case BREAK:
+        case InstrumentBreak:
             strcpy((char *)buffer, "break");
             break;
-        case PAN:
+        case InstrumentPan:
             strcpy((char *)buffer, "pan");
             break;
-        case WAVEFORM:
+        case InstrumentWaveform:
             strcpy((char *)buffer, "waveform");
             break;
-        case VOLUME:
+        case InstrumentVolume:
             strcpy((char *)buffer, "volume");
             break;
-        case NOTE:
+        case InstrumentNote:
             strcpy((char *)buffer, "note");
             break;
-        case WAIT:
+        case InstrumentWait:
             strcpy((char *)buffer, "wait");
             break;
-        case FADE_IN:
-            strcpy((char *)buffer, "fade in");
+        case InstrumentFadeMagnitude:
+            strcpy((char *)buffer, "fade amt");
             break;
-        case FADE_OUT:
-            strcpy((char *)buffer, "fade out");
+        case InstrumentFadeBehavior:
+            strcpy((char *)buffer, "fade type");
             break;
-        case INERTIA:
+        case InstrumentInertia:
             strcpy((char *)buffer, "inertia");
             break;
-        case VIBRATO:
+        case InstrumentVibrato:
             strcpy((char *)buffer, "vibrato");
             break;
-        case BEND:
+        case InstrumentBend:
             strcpy((char *)buffer, "bend");
             break;
-        case BITCRUSH:
+        case InstrumentSpecial:
             strcpy((char *)buffer, "bitcrush");
             break;
-        case DUTY:
+        case InstrumentDuty:
             strcpy((char *)buffer, "duty");
             break;
-        case DUTY_DELTA:
+        case InstrumentDutyDelta:
             strcpy((char *)buffer, "delta duty");
             break;
-        case RANDOMIZE:
+        case InstrumentRandomize:
             strcpy((char *)buffer, "randomize");
             break;
-        case JUMP:
+        case InstrumentJump:
             strcpy((char *)buffer, "jump");
             break;
     }
@@ -235,13 +235,13 @@ void editInstrument_render_command(int j, int y)
         }
     }
     
-    if (cmd == BREAK)
+    if (cmd == InstrumentBreak)
     {
         if (param == 0)
         {
             if (y == 7)
             {
-                if (j == 0 || (instrument[editInstrument_instrument].cmd[j-1]&15) != RANDOMIZE)
+                if (j == 0 || (instrument[editInstrument_instrument].cmd[j-1]&15) != InstrumentRandomize)
                     show_instrument = 0;
             }
             cmd = '6';
@@ -256,7 +256,7 @@ void editInstrument_render_command(int j, int y)
     else 
     switch (cmd)
     {
-        case PAN:
+        case InstrumentPan:
         {    
             uint8_t L, R=param-1;
             L = 14-R;
@@ -277,7 +277,7 @@ void editInstrument_render_command(int j, int y)
             }
             break;
         }
-        case WAVEFORM:
+        case InstrumentWaveform:
             switch (param)
             {
                 case WfSine:
@@ -315,44 +315,45 @@ void editInstrument_render_command(int j, int y)
             }
             smash_together = 1;
             break;
-        case VOLUME:
+        case InstrumentVolume:
             cmd = 'V';
             param = hex_character[param];
             break;
-        case NOTE:
+        case InstrumentNote:
             if (param >= 12)
                 color_choice[1] = RGB(150,150,255)|(65535<<16);
             param %= 12;
             cmd = note_name[param][0];
             param = note_name[param][1];
             break;
-        case WAIT:
+        case InstrumentWait:
             cmd = 'W';
             if (param)
                 param = hex_character[param];
             else
                 param = 'g';
             break;
-        case FADE_IN:
-            cmd = '<';
+        case InstrumentFadeMagnitude:
+            cmd = '>';
             param = hex_character[param];
             break;
-        case FADE_OUT:
-            cmd = '>';
+        case InstrumentFadeBehavior:
+            // TODO: better stuff here
+            cmd = 'F';
             if (param)
                 param = hex_character[param];
             else
                 param = 'g';
             break;
-        case INERTIA:
+        case InstrumentInertia:
             cmd = 'i';
             param = hex_character[param];
             break;
-        case VIBRATO:
+        case InstrumentVibrato:
             cmd = '~';
             param = hex_character[param];
             break;
-        case BEND:
+        case InstrumentBend:
             if (param < 8)
             {
                 cmd = 11; // bend up
@@ -364,23 +365,23 @@ void editInstrument_render_command(int j, int y)
                 param = hex_character[16-param];
             }
             break;
-        case BITCRUSH:
+        case InstrumentSpecial:
             cmd = 9;
             param = hex_character[param];
             break;
-        case DUTY:
+        case InstrumentDuty:
             cmd = 129; // Gamma
             param = hex_character[param];
             break;
-        case DUTY_DELTA:
+        case InstrumentDutyDelta:
             cmd = 130; // Delta
             param = hex_character[param];
             break;
-        case RANDOMIZE:
+        case InstrumentRandomize:
             cmd = 'R';
             param = 224 + param;
             break;
-        case JUMP:
+        case InstrumentJump:
             cmd = 'J';
             param = hex_character[param];
             break;
@@ -443,7 +444,7 @@ void editInstrument_render_command(int j, int y)
     if (cmd_index)
     switch (instrument[editInstrument_instrument].cmd[cmd_index-1]&15)
     {
-        case WAIT:
+        case InstrumentWait:
             --cmd_index;
     }
     if (j == cmd_index)
@@ -491,7 +492,7 @@ void editInstrument_adjust_parameter(int direction)
     uint8_t cmd = instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
     uint8_t param = cmd>>4;
     cmd &= 15;
-    if (cmd == WAVEFORM)
+    if (cmd == InstrumentWaveform)
     {
         param = param+direction;
         if (param > 240)
@@ -511,7 +512,7 @@ void editInstrument_adjust_parameter(int direction)
 
 int __check_instrument(uint8_t j, uint8_t j_max)
 {
-    // check for a JUMP which loops back on itself without waiting at least a little bit.
+    // check for a InstrumentJump which loops back on itself without waiting at least a little bit.
     // return 1 if so, 0 if not.
     int j_last_jump = -1;
     int found_wait = 0;
@@ -533,7 +534,7 @@ int __check_instrument(uint8_t j, uint8_t j_max)
             int j_next_jump = -1;
             switch (instrument[editInstrument_instrument].cmd[j]&15)
             {
-                case JUMP:
+                case InstrumentJump:
                     j_next_jump = instrument[editInstrument_instrument].cmd[j]>>4;
                     if (j_next_jump == j_last_jump) // jumping forward to the original jump
                     {
@@ -553,14 +554,14 @@ int __check_instrument(uint8_t j, uint8_t j_max)
                     }
                     j = j_next_jump;
                     break;
-                case WAIT:
+                case InstrumentWait:
                     message("saw wait at j=%d\n", j);
                     found_wait = 1;
                     ++j;
                     break;
-                case BREAK:
+                case InstrumentBreak:
                     // check for a randomizer behind
-                    if (j > 0 && (instrument[editInstrument_instrument].cmd[j-1]&15) == RANDOMIZE)
+                    if (j > 0 && (instrument[editInstrument_instrument].cmd[j-1]&15) == InstrumentRandomize)
                     {}
                     else if ((instrument[editInstrument_instrument].cmd[j]>>4) == 0)
                         return 0;
@@ -571,7 +572,7 @@ int __check_instrument(uint8_t j, uint8_t j_max)
         }
         else switch (instrument[editInstrument_instrument].cmd[j]&15)
         {
-            case JUMP:
+            case InstrumentJump:
                 j_last_jump = j;
                 j = instrument[editInstrument_instrument].cmd[j]>>4;
                 if (j > j_last_jump)
@@ -587,9 +588,9 @@ int __check_instrument(uint8_t j, uint8_t j_max)
                 else
                     found_wait = 0;
                 break;
-            case BREAK:
+            case InstrumentBreak:
                 // check for a randomizer behind
-                if (j > 0 && (instrument[editInstrument_instrument].cmd[j-1]&15) == RANDOMIZE)
+                if (j > 0 && (instrument[editInstrument_instrument].cmd[j-1]&15) == InstrumentRandomize)
                 {}
                 else if ((instrument[editInstrument_instrument].cmd[j]>>4) == 0)
                     return 0;
@@ -689,59 +690,60 @@ void editInstrument_line()
         case 3:
             switch (instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]&15)
             {
-                case BREAK:
+                case InstrumentBreak:
                     strcpy((char *)buffer, "end if before tkpos");
                     break;
-                case PAN:
+                case InstrumentPan:
                     strcpy((char *)buffer, "pan left/right");
                     break;
-                case WAVEFORM:
+                case InstrumentWaveform:
                     strcpy((char *)buffer, "waveform");
                     break;
-                case VOLUME:
+                case InstrumentVolume:
                     strcpy((char *)buffer, "volume");
                     break;
-                case NOTE:
+                case InstrumentNote:
                     strcpy((char *)buffer, "relative note from C");
                     break;
-                case WAIT:
+                case InstrumentWait:
                     strcpy((char *)buffer, "wait");
                     break;
-                case FADE_IN:
-                    strcpy((char *)buffer, "fade in");
+                case InstrumentFadeMagnitude:
+                    strcpy((char *)buffer, "fade magnitude");
                     break;
-                case FADE_OUT:
-                    strcpy((char *)buffer, "fade out");
+                case InstrumentFadeBehavior:
+                    strcpy((char *)buffer, "fade behavior");
                     break;
-                case INERTIA:
+                case InstrumentInertia:
                     strcpy((char *)buffer, "note inertia");
                     break;
-                case VIBRATO:
+                case InstrumentVibrato:
                     strcpy((char *)buffer, "vibrato rate, depth");
                     break;
-                case BEND:
+                case InstrumentBend:
                     strcpy((char *)buffer, "bend");
                     break;
-                case BITCRUSH:
-                    strcpy((char *)buffer, "bitcrush");
+                case InstrumentSpecial:
+                    // TODO:
+                    strcpy((char *)buffer, "???");
                     break;
-                case DUTY:
+                case InstrumentDuty:
                     strcpy((char *)buffer, "duty");
                     break;
-                case DUTY_DELTA:
+                case InstrumentDutyDelta:
                     strcpy((char *)buffer, "change in duty");
                     break;
-                case RANDOMIZE:
+                case InstrumentRandomize:
                     strcpy((char *)buffer, "randomize next cmd");
                     break;
-                case JUMP:
+                case InstrumentJump:
                     strcpy((char *)buffer, "jump to command");
                     break;
             }
             font_render_line_doubled(buffer, 102, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_instrument;
         case 4:
-            if ((instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]&15) == VIBRATO)
+            if ((instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]&15) == InstrumentVibrato)
             {
                 uint8_t msg[16];
                 switch ((instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]/16)/4) // rate
@@ -1009,7 +1011,7 @@ static inline void editInstrument_edit_controls()
 
             if (editInstrument_cmd_index < MAX_INSTRUMENT_LENGTH-1)
             {
-                if (instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] == BREAK)
+                if (instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] == InstrumentBreak)
                     editInstrument_cmd_index = next_j;
                 else
                     ++editInstrument_cmd_index;
@@ -1028,7 +1030,7 @@ static inline void editInstrument_edit_controls()
             else
             {
                 while (editInstrument_cmd_index < MAX_INSTRUMENT_LENGTH-1 && 
-                    instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != BREAK)
+                    instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != InstrumentBreak)
                     ++editInstrument_cmd_index;
             }
         }
@@ -1057,7 +1059,7 @@ static inline void editInstrument_edit_controls()
             {
                 editInstrument_cmd_index = move_here_then_up;
                 while (editInstrument_cmd_index < but_no_further_than-1 && 
-                    instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != BREAK)
+                    instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != InstrumentBreak)
                 {
                     ++editInstrument_cmd_index;
                 }
@@ -1092,7 +1094,7 @@ static inline void editInstrument_edit_controls()
                 if ((instrument[editInstrument_instrument].cmd[j] = instrument[editInstrument_instrument].cmd[j+1]) == 0)
                     break;
             }
-            instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1] = BREAK;
+            instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1] = InstrumentBreak;
         }
         else
         {
@@ -1109,7 +1111,7 @@ static inline void editInstrument_edit_controls()
                 if ((instrument[editInstrument_instrument].cmd[j] = instrument[editInstrument_instrument].cmd[j+1]) == 0)
                     break;
             }
-            instrument[editInstrument_instrument].cmd[max_j-1] = BREAK;
+            instrument[editInstrument_instrument].cmd[max_j-1] = InstrumentBreak;
         }
         check_instrument();
         return;
@@ -1120,7 +1122,7 @@ static inline void editInstrument_edit_controls()
         // insert
         if (!instrument[editInstrument_instrument].is_drum)
         {
-            if ((instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1]&15) != BREAK)
+            if ((instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1]&15) != InstrumentBreak)
                 return game_set_message_with_timeout("list full, can't insert.", MESSAGE_TIMEOUT); 
             for (int j=MAX_INSTRUMENT_LENGTH-1; j>editInstrument_cmd_index; --j)
                 instrument[editInstrument_instrument].cmd[j] = instrument[editInstrument_instrument].cmd[j-1];
@@ -1134,7 +1136,7 @@ static inline void editInstrument_edit_controls()
                 next_j = 3*DRUM_SECTION_LENGTH;
             else
                 next_j = MAX_INSTRUMENT_LENGTH;
-            if ((instrument[editInstrument_instrument].cmd[next_j-1]&15) != BREAK)
+            if ((instrument[editInstrument_instrument].cmd[next_j-1]&15) != InstrumentBreak)
                 return game_set_message_with_timeout("list full, can't insert.", MESSAGE_TIMEOUT); 
 
             for (int j=next_j-1; j>editInstrument_cmd_index; --j)

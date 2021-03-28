@@ -6,6 +6,7 @@
 #ifndef CHIP_H
 #define CHIP_H
 #include <stdint.h>
+#include "game.h"
 
 #define MAX_INSTRUMENT_LENGTH 16
 #define DRUM_SECTION_LENGTH (MAX_INSTRUMENT_LENGTH/4)
@@ -35,6 +36,44 @@ typedef enum
     WfViolet, // = "derivative" of WfNoise
     // TODO: potentially we can add more, up to 16 total.
 } wf_t;
+
+typedef enum 
+{   InstrumentBreak = 0,
+    InstrumentPan = 1,
+    InstrumentWaveform = 2,
+    InstrumentVolume = 3,
+    InstrumentNote = 4,
+    InstrumentWait = 5,
+    InstrumentFadeMagnitude = 6,
+    InstrumentFadeBehavior = 7,
+    InstrumentInertia = 8,
+    InstrumentVibrato = 9, // Frequency oscillation
+    InstrumentBend = 10,
+    InstrumentSpecial = 11,
+    InstrumentDuty = 12,
+    InstrumentDutyDelta = 13,
+    InstrumentRandomize = 14,
+    InstrumentJump = 15,
+    // Nothing 16 or above is allowed
+} inst_cmd_t;
+
+typedef enum
+{   // Positive/negative enforcement for the fade magnitude.  i.e., can be a fade in or fade out.
+    InstrumentFadeNegativeVolumeD = 0, // when user sets the magnitude, make it a fade out
+    InstrumentFadePositiveVolumeD = 1, // when user sets the magnitude, make it a fade in
+} inst_fade_volumed_behavior_t;
+
+typedef enum
+{   // What happens when a fade reaches the limit (min volume or max volume)
+    InstrumentFadeClamp = 0, // Stop at min (or max) and stay there
+    InstrumentFadeReverseClamp = 1, // go to max volume and then cut to min, or vice versa.
+    InstrumentFadePingPong = 2, // Go back and forth between min and max volume
+    InstrumentFadePingPongLoweringVolume = 3, // Go back and forth between min and max, decrease max over time
+    InstrumentFadePingPongIncreasingVolume = 4, // Go back and forth between min and max, increase min over time
+    InstrumentFadeWrap = 5, // When reaching the max, return to min.  Or vice versa. 
+    InstrumentFadeWrapLoweringVolume = 6, // When hitting a limit, decrease the max. 
+    InstrumentFadeWrapIncreasingVolume = 7, // When hitting a limit, increase the min 
+} inst_fade_behavior_t;
 
 struct oscillator {
     uint8_t pan;
@@ -82,6 +121,14 @@ struct chip_player
     uint8_t track_volume;
     int8_t track_volumed; 
 
+    // a u8 of the inst_fade_behavior_t:
+    uint8_t fade_behavior;
+    // a u8 of the inst_fade_volumed_behavior_t:
+    uint8_t fade_volumed_behavior;
+    // for fade echo and other effects bouncing around:
+    uint8_t fade_saved_max_volume;
+    uint8_t fade_saved_min_volume;
+
     uint16_t inertia_slide; // internally how we keep track of note with inertia 
     uint8_t inertia;
     uint8_t track_inertia;
@@ -127,26 +174,6 @@ void chip_play_track(int track);
 
 // play a note of this instrument now - useful for SFX !
 void chip_play_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t track_volume);
-
-// TODO: use an enum instead, e.g. InstrumentCommandType, with e.g. InstrumentPan
-#define BREAK 0
-#define PAN 1
-#define WAVEFORM 2
-#define VOLUME 3
-#define NOTE 4
-#define WAIT 5
-// TODO: combine FADE_IN and OUT
-#define FADE_IN 6
-#define FADE_OUT 7
-#define INERTIA 8
-#define VIBRATO 9
-#define BEND 10
-// Maybe remove this and do something cooler, e.g. repeat note every so often
-#define BITCRUSH 11
-#define DUTY 12
-#define DUTY_DELTA 13
-#define RANDOMIZE 14
-#define JUMP 15
 
 // TODO: use an enum instead, e.g. TrackCommandType, e.g. with TrackBreak
 #define TRACK_BREAK 0

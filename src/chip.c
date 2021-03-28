@@ -111,13 +111,13 @@ int instrument_jump_bad(uint8_t inst, uint8_t max_index, uint8_t jump_from_index
             return 1;
         switch (instrument[inst].cmd[j]&15)
         {   // Update instrument position j based on command:
-            case JUMP:
+            case InstrumentJump:
                 j = instrument[inst].cmd[j]>>4;
                 break;
-            case WAIT:
+            case InstrumentWait:
                 // We found a wait, this jump is ok.
                 return 0;
-            case BREAK:
+            case InstrumentBreak:
                 if ((instrument[inst].cmd[j]>>4) == 0)
                     return 0;
             default:
@@ -202,60 +202,80 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
     uint8_t param = cmd >> 4;
     switch (cmd&15) 
     {   // The lower nibble of cmd determines what to do, and the upper nibble is the param:
-        case BREAK:
+        case InstrumentBreak:
             if (!param || track_pos < param*4)
                 chip_player[i].cmd_index = MAX_INSTRUMENT_LENGTH; // end instrument commmands
             break;
-        case PAN: // s = switch side (L/R)
+        case InstrumentPan: // p = switch side (L/R) for full volume
             // 1 = left side, 8 = both sides, 15 = right side
-            // also set 0 to be both sides as well.
+            // 0 also implies both sides full volume as well.
             oscillator[i].pan = param;
             break;
-        case VOLUME: // v = volume
+        case InstrumentVolume: // v = volume
             chip_player[i].volume = param*17;
             break;
-        case WAVEFORM: // w = select waveform
+        case InstrumentWaveform: // w = select waveform
             oscillator[i].waveform = param;
             break;
-        case NOTE: // C-Eb = set relative note
+        case InstrumentNote: // C-Eb = set relative note
             chip_player[i].note = (param + chip_player[i].track_note + song_transpose)%MAX_NOTE;
             break;
-        case WAIT: // t = timing 
+        case InstrumentWait: // t = timing 
             if (param)
                 chip_player[i].wait = param;
             else
                 chip_player[i].wait = 16;
             break;
-        case FADE_IN: // < = fade in, or crescendo
-            chip_player[i].volumed = param + param*param/15;
+        case InstrumentFadeMagnitude: // > = fade amplitude
+            // normally starts a decrescendo, but depends on InstrumentFadeBehavior.
+            chip_player[i].fade_saved_max_volume = 255;
+            chip_player[i].fade_saved_min_volume = 0;
+            param = param + param*param/15;
+            if (chip_player[i].fade_volumed_behavior == InstrumentFadeNegativeVolumeD)
+                chip_player[i].volumed = -param;
+            else
+                chip_player[i].volumed = param;
             break;
-        case FADE_OUT: // > = fade out, or decrescendo
-            if (!param) param = 16;
-            chip_player[i].volumed = -param - param*param/15;
+        case InstrumentFadeBehavior: // < = fade behavior, can flip a decrescendo to a crescendo, etc.
+            //                       enforce-negative  enforce-positive
+            // clamp                        0   \__         1   /‾‾
+            // reverse-clamp                2   \‾‾         3   /__
+            //                       enforce-negative  enforce-positive
+            // ping-pong                    4   \/\/\       5   /\/\/
+            // ping-pong with lowering vol  6               7
+            // ping-pong increasing vol     8               9
+            // wrap                         a   \\\\        b   ////
+            // wrap with decreasing vol     b               c
+            // wrap with increasing vol     e               f
+            chip_player[i].fade_behavior = param / 2;
+            chip_player[i].fade_volumed_behavior = param % 2;
+            // TODO: maybe want to set these differently for various behaviors, but that complicates things...
+            chip_player[i].fade_saved_max_volume = 255;
+            chip_player[i].fade_saved_min_volume = 0;
             break;
-        case INERTIA: // i = inertia (auto note slides)
+        case InstrumentInertia: // i = inertia (auto note slides)
             chip_player[i].inertia = param;
             break;
-        case VIBRATO: // ~ = vibrato depth and rate
+        case InstrumentVibrato: // ~ = vibrato depth and rate
             chip_player[i].vibrato_depth = (param&3)*3 + (param>3)*2;
             chip_player[i].vibrato_rate = 2 + (param & 12)/2;
             break;
-        case BEND: // / or \ = increases or drops frequency
+        case InstrumentBend: // / or \ = increases or drops frequency
             if (param < 8)
                 chip_player[i].bendd = param + param*param/4;
             else
                 chip_player[i].bendd = -(16-param) - (16-param)*(16-param)/4;
             break;
-        case BITCRUSH: // b = bitcrush
-            oscillator[i].bitcrush = param;
+        case InstrumentSpecial: // s = special
+            // TODO
             break;
-        case DUTY: // d = duty cycle.  param==8 makes for a square wave if waveform is WfPulse
+        case InstrumentDuty: // d = duty cycle.  param==8 makes for a square wave if waveform is WfPulse
             oscillator[i].duty = 16384 + (param << 11);
             break;
-        case DUTY_DELTA: // m = duty variation
+        case InstrumentDutyDelta: // m = duty variation
             chip_player[i].dutyd = param << 4;
             break;
-        case RANDOMIZE:
+        case InstrumentRandomize:
         {   // Randomize the next command's param in the list based on this command:
             uint8_t next_index = chip_player[i].cmd_index;
             uint8_t max_index = instrument_max_index(inst, next_index-1);
@@ -263,12 +283,12 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
                 break;
             uint8_t random = randomize(param);
             uint8_t next_command_type = instrument[inst].cmd[next_index] & 15;
-            if (next_command_type == JUMP)
+            if (next_command_type == InstrumentJump)
             {   // don't allow a randomized jump to cause an infinite loop:
                 if (instrument_jump_bad(inst, max_index, next_index, random))
                     break; // do not continue, do not allow this number as a jump
             }
-            else if (next_command_type == WAVEFORM)
+            else if (next_command_type == InstrumentWaveform)
             {   // TODO: until we add more waveforms, make sure we get something not silent:
                 random %= 8;
                 if (random == 7)
@@ -277,7 +297,7 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
             instrument[inst].cmd[next_index] = next_command_type | (random<<4);
             break;
         }
-        case JUMP: // j = instrument jump
+        case InstrumentJump:
             chip_player[i].cmd_index = param;
             break;
     }
@@ -299,6 +319,11 @@ void chip_reset_player(int i)
     chip_player[i].track_cmd_index = 0;
     chip_player[i].track_wait = 0;
     chip_player[i].volume = 0;
+    chip_player[i].volumed = 0;
+    chip_player[i].fade_behavior = 0;
+    chip_player[i].fade_volumed_behavior = 0;
+    chip_player[i].fade_saved_max_volume = 255;
+    chip_player[i].fade_saved_min_volume = 0;
     chip_player[i].track_volume = 0;
     chip_player[i].track_volumed = 0;
     chip_player[i].track_inertia = 0;
@@ -400,6 +425,10 @@ static void chip_play_note_internal(uint8_t p, uint8_t note)
     }
     chip_player[p].track_note = note + chip_player[p].octave*12;
     chip_player[p].volumed = 0;
+    chip_player[p].fade_behavior = 0;
+    chip_player[p].fade_volumed_behavior = 0;
+    chip_player[p].fade_saved_max_volume = 255;
+    chip_player[p].fade_saved_min_volume = 0;
     chip_player[p].inertia = 0;
     chip_player[p].wait = 0;
     chip_player[p].dutyd = 0;
@@ -534,10 +563,8 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             song_speed = 16 - param;
             break;
         case TRACK_LENGTH: // M - measure length, in quarter notes
-            if (param)
-                track_length = 4*param;
-            else // zero is a special case:  16 quarter notes
-                track_length = 64;
+            param = param ? param : 16;
+            track_length = 4 * param;
             break;
         case TRACK_RANDOMIZE:
         {
@@ -699,10 +726,111 @@ static void chip_update_oscillators()
         chip_player[i].bend += chip_player[i].bendd;
 
         vol = chip_player[i].volume + chip_player[i].volumed;
-        if (vol < 0)
-            vol = 0;
-        else if (vol > 255)
-            vol = 255;
+        int16_t max_vol = chip_player[i].fade_saved_max_volume;
+        int16_t min_vol = chip_player[i].fade_saved_min_volume;
+
+        if (vol > max_vol)
+        switch (chip_player[i].fade_behavior)
+        {   case InstrumentFadeClamp:
+                vol = max_vol;
+                break;
+            case InstrumentFadeReverseClamp:
+                vol = chip_player[i].fade_saved_min_volume;
+                chip_player[i].volumed = 0;
+                break;
+            case InstrumentFadePingPong:
+            case InstrumentFadePingPongIncreasingVolume:
+                // Update min volume for increasing volume at the bottom of the ping/pong.
+                if (chip_player[i].volumed > 0)
+                {   // Only update delta volume at top:
+                    vol = max_vol;
+                    chip_player[i].volumed *= -1;
+                }
+                else
+                    ASSERT(vol < 256);
+                break;
+            case InstrumentFadePingPongLoweringVolume:
+                if (chip_player[i].volumed > 0)
+                {   // Update delta volume at top with max volume:
+                    vol = max_vol;
+                    chip_player[i].volumed *= -1;
+                    chip_player[i].fade_saved_max_volume =
+                    (   chip_player[i].fade_saved_max_volume + 
+                        chip_player[i].fade_saved_min_volume
+                    ) / 2;
+                }
+                else
+                    ASSERT(vol < 256);
+                break;
+            case InstrumentFadeWrap:
+                vol = min_vol;
+                break;
+            case InstrumentFadeWrapLoweringVolume:
+                vol = min_vol;
+                chip_player[i].fade_saved_max_volume = 
+                (   chip_player[i].fade_saved_max_volume + 
+                    chip_player[i].fade_saved_min_volume
+                ) / 2;
+                break;
+            case InstrumentFadeWrapIncreasingVolume:
+                vol = min_vol;
+                chip_player[i].fade_saved_min_volume = 
+                (   chip_player[i].fade_saved_max_volume + 
+                    chip_player[i].fade_saved_min_volume
+                ) / 2;
+                break;
+        }
+        else if (vol < min_vol)
+        switch (chip_player[i].fade_behavior)
+        {   case InstrumentFadeClamp:
+                vol = min_vol;
+                break;
+            case InstrumentFadeReverseClamp:
+                vol = chip_player[i].fade_saved_max_volume;
+                chip_player[i].volumed = 0;
+                break;
+            case InstrumentFadePingPong:
+            case InstrumentFadePingPongLoweringVolume:
+                // Update max volume for decreasing volume at the top of the ping/pong.
+                if (chip_player[i].volumed < 0)
+                {   // Only update delta volume at bottom:
+                    vol = min_vol;
+                    chip_player[i].volumed *= -1;
+                }
+                else
+                    ASSERT(vol >= 0);
+                break;
+            case InstrumentFadePingPongIncreasingVolume:
+                if (chip_player[i].volumed < 0)
+                {   // Update delta volume at bottom with max volume:
+                    vol = min_vol;
+                    chip_player[i].volumed *= -1;
+                    chip_player[i].fade_saved_min_volume =
+                    (   chip_player[i].fade_saved_max_volume + 
+                        chip_player[i].fade_saved_min_volume
+                    ) / 2;
+                }
+                else
+                    ASSERT(vol >= 0);
+                break;
+            case InstrumentFadeWrap:
+                vol = max_vol; 
+                break;
+            case InstrumentFadeWrapLoweringVolume:
+                vol = max_vol; 
+                chip_player[i].fade_saved_max_volume = 
+                (   chip_player[i].fade_saved_max_volume + 
+                    chip_player[i].fade_saved_min_volume
+                ) / 2;
+                break;
+            case InstrumentFadeWrapIncreasingVolume:
+                vol = max_vol; 
+                chip_player[i].fade_saved_min_volume = 
+                (   chip_player[i].fade_saved_max_volume + 
+                    chip_player[i].fade_saved_min_volume
+                ) / 2;
+                break;
+        }
         chip_player[i].volume = vol;
       
         // TODO: maybe move this into chip_update_players()

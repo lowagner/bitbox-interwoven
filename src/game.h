@@ -7,10 +7,16 @@
 #define SCREEN_H 240
 
 #ifdef EMULATOR
-#define ASSERT(x) {if (!(x)) {message(#x " was not true!\n");}}
+#define EMU_ONLY(x) x
 #else
-#define ASSERT(x) {}
+#define EMU_ONLY(x) {}
 #endif
+
+#define ASSERT(x) EMU_ONLY({if (!(x)) \
+{   message(#x " was not true at " __FILE__ ":%d!\n", __LINE__); \
+    bitbox_die(-1, 0); \
+}})
+#define MAKE_TEST(x, y) EMU_ONLY(void test_##x y)
 
 #define GAMEPAD_PRESS_WAIT 8
 #define GAMEPAD_PRESS(id, key) ((gamepad_buttons[id]) & (~old_gamepad[id]) & (gamepad_##key))
