@@ -1,5 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
+#include "bitbox.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -16,7 +17,6 @@
 {   message(#x " was not true at " __FILE__ ":%d!\n", __LINE__); \
     bitbox_die(-1, 0); \
 }})
-#define MAKE_TEST(x, y) EMU_ONLY(void test_##x y)
 
 #define GAMEPAD_PRESS_WAIT 8
 #define GAMEPAD_PRESS(id, key) ((gamepad_buttons[id]) & (~old_gamepad[id]) & (gamepad_##key))

@@ -26,6 +26,8 @@ int game_message_timeout CCM_MEMORY;
 
 void game_init()
 {   // Logic run once when setting up the Bitbox; Bitbox will call this, don't do it yourself.
+    EMU_ONLY(test_physics());
+
     game_mode = ModeNone;
     previous_game_mode = ModeNone;
 
