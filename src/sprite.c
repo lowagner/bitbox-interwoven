@@ -22,29 +22,13 @@ void sprite_init()
 
 uint8_t sprite_new()
 {   // returns an index to a free sprite, or zero if none.
-    uint8_t index = sprite[0].next_free;
-    if (!index)
-        return 0;
-    struct sprite *new_sprite = &sprite[index];
-
-    // update the free list:
-    sprite[0].next_free = new_sprite->next_free;
-
-    // TODO: revisit if the insertion sort is taking a long time.
     // add new sprite to the draw_order list;
     // it's not sorted yet but that will happen in the sprite_frame();
     // users haven't updated the sprite details yet anyway so it doesn't
     // make sense to try and find any other spot for it yet.
     // the visible list shouldn't be in use yet (that is used only in sprite_line())
     // so we just have to update the draw_order list.
-    uint8_t next_to_draw = sprite[0].next_to_draw;
-
-    new_sprite->next_to_draw = next_to_draw;
-    new_sprite->previous_to_draw = 0;
-
-    sprite[next_to_draw].previous_to_draw = index;
-
-    return index;
+    LL_NEW(sprite, next_to_draw, previous_to_draw, MAX_SPRITES);
 }
 
 static inline void sprite_detach_from_draw(uint8_t index)
@@ -84,8 +68,7 @@ void sprite_free(uint8_t index)
     sprite_detach_from_draw(index);
 
     // update the free list:
-    sprite[index].next_free = sprite[0].next_free;
-    sprite[0].next_free = index;
+    LL_FREE(sprite, index);
 }
 
 static inline void sprite_insert_before_visible(uint8_t index, uint8_t next_visible)

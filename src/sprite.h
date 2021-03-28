@@ -5,7 +5,7 @@
 
 #define MAX_SPRITES 128 // needs to be strictly less than 256.  technically we use 1 as the head of the linked list.
 
-struct sprite {
+typedef struct sprite {
     // 32 bits for linked list stuff.
     // updated in sprite_line() and sprite_frame(), do not change outside of these.
     uint8_t next_to_draw;       // linking sprites which should be drawn next -
@@ -27,9 +27,9 @@ struct sprite {
         uint8_t next_free; // next free sprite index, only used in the free (unused) list of sprites.
     };
     // try to keep to 4x32 bits = 4x4 bytes = 16 bytes
-};
+} sprite_t;
 
-extern struct sprite sprite[MAX_SPRITES];
+extern sprite_t sprite[MAX_SPRITES];
 
 uint8_t sprite_new();
 void sprite_free(uint8_t index);
