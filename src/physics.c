@@ -2,15 +2,11 @@
 #include "physics.h"
 
 physics_object_t physics_object[MAX_PHYSICS_OBJECTS] CCM_MEMORY;
+physics_collision_t physics_collision[MAX_PHYSICS_COLLISIONS] CCM_MEMORY;
 
 void physics_reset()
 {   // Resets physics engine
-    for (int i = 0; i < MAX_PHYSICS_OBJECTS; ++i)
-    {   physics_object[i].next_object = 0;
-        physics_object[i].previous_object = 0;
-        physics_object[i].next_free = i + 1;
-    }
-    physics_object[MAX_PHYSICS_OBJECTS-1].next_free = 0;
+    LL_RESET(physics_object, next_object, previous_object, MAX_PHYSICS_OBJECTS);
 }
 
 uint8_t physics_new_object()
@@ -21,6 +17,20 @@ uint8_t physics_new_object()
 void physics_free_object(uint8_t index)
 {   // returns an index to a free physics_object, or zero if none.
     LL_FREE(physics_object, index);
+}
+
+static inline void physics_reset_collisions()
+{   LL_RESET(physics_collision, next_collision, previous_collision, MAX_PHYSICS_COLLISIONS); 
+    uint8_t object = physics_object[0].next_object;
+    while (object)
+    {   memset(physics_object[object].collisions, 0, 6);
+        object = physics_object[object].next_object;
+    }
+}
+
+void physics_frame()
+{   physics_reset_collisions();
+
 }
 
 int physics_overlap(const physics_boundary_t *b1, const physics_boundary_t *b2)

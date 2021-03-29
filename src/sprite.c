@@ -8,16 +8,7 @@ struct sprite sprite[MAX_SPRITES] CCM_MEMORY;
 
 void sprite_init()
 {   // setup the sprites to have the correct free linked list.
-
-    // set up the head of the linked list:
-    sprite[0] = (struct sprite) {
-        .next_to_draw = 0,        
-        .previous_to_draw = 0,        
-    };
-    // set up all connections:
-    for (int i=0; i<MAX_SPRITES - 1; ++i)
-        sprite[i].next_free = i + 1;
-    sprite[MAX_SPRITES-1].next_free = 0;
+    LL_RESET(sprite, next_to_draw, previous_to_draw, MAX_SPRITES);
 }
 
 uint8_t sprite_new()

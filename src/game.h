@@ -50,6 +50,17 @@ void game_set_message_with_timeout(const char *msg, int timeout);
 
 #define MESSAGE_TIMEOUT (10*64)
 
+#define LL_RESET(container, next_name, previous_name, MAX_COUNT) \
+    container[0].next_name = 0; \
+    container[0].previous_name = 0; \
+    { \
+    int i; \
+    for (i = 0; i < MAX_COUNT - 1; ++i) \
+    {   container[i].next_free = i + 1; \
+    } \
+    container[i].next_free = 0; \
+    }
+
 #define LL_NEW(container, next_name, previous_name, MAX_COUNT) \
     uint8_t index = container[0].next_free; \
     if (!index) \
@@ -61,10 +72,10 @@ void game_set_message_with_timeout(const char *msg, int timeout);
     container[0].next_free = new_element->next_free; \
     \
     /* do the insertion: */ \
-    uint8_t next = container[0].next_object; \
-    new_element->##next_name = next; \
-    new_element->##previous_name = 0; \
-    container[next].##previous_name = index; \
+    uint8_t next = container[0].next_name; \
+    new_element->next_name = next; \
+    new_element->previous_name = 0; \
+    container[next].previous_name = index; \
     \
     return index;
 
