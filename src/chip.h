@@ -69,10 +69,48 @@ typedef enum
     InstrumentFadeReverseClamp = 1, // go to max volume and then cut to min, or vice versa.
     InstrumentFadePingPong = 2, // Go back and forth between min and max volume
     InstrumentFadePingPongLoweringVolume = 3, // Go back and forth between min and max, decrease max over time
-    InstrumentFadePingPongIncreasingVolume = 4, // Go back and forth between min and max, increase min over time
+    InstrumentFadePingPongRaisingVolume = 4, // Go back and forth between min and max, increase min over time
     InstrumentFadeWrap = 5, // When reaching the max, return to min.  Or vice versa. 
     InstrumentFadeWrapLoweringVolume = 6, // When hitting a limit, decrease the max. 
-    InstrumentFadeWrapIncreasingVolume = 7, // When hitting a limit, increase the min 
+    InstrumentFadeWrapRaisingVolume = 7, // When hitting a limit, increase the min 
+} inst_fade_behavior_type_t;
+
+typedef enum
+{   // Combined behavior_type and volumed_behavior:
+    //                       enforce-negative  enforce-positive
+    // clamp                        0   \__         1   /‾‾
+    // reverse-clamp                2   \‾‾         3   /__
+    //                       enforce-negative  enforce-positive
+    // ping-pong                    4   \/\/\       5   /\/\/
+    // ping-pong with lowering vol  6               7
+    // ping-pong increasing vol     8               9
+    // wrap                         a   \\\\        b   ////
+    // wrap with decreasing vol     b               c
+    // wrap with increasing vol     e               f
+    InstrumentFadeClampWithNegativeVolumeD = 2 * InstrumentFadeClamp + InstrumentFadeNegativeVolumeD,
+    InstrumentFadeClampWithPositiveVolumeD = 2 * InstrumentFadeClamp + InstrumentFadePositiveVolumeD,
+    InstrumentFadeReverseClampWithNegativeVolumeD = 2 * InstrumentFadeReverseClamp + InstrumentFadeNegativeVolumeD,
+    InstrumentFadeReverseClampWithPositiveVolumeD = 2 * InstrumentFadeReverseClamp + InstrumentFadePositiveVolumeD,
+    InstrumentFadePingPongStartingWithNegativeVolumeD = 2 * InstrumentFadePingPong + InstrumentFadeNegativeVolumeD,
+    InstrumentFadePingPongStartingWithPositiveVolumeD = 2 * InstrumentFadePingPong + InstrumentFadePositiveVolumeD,
+    InstrumentFadePingPongLoweringVolumeStartingWithNegativeVolumeD
+            = 2 * InstrumentFadePingPongLoweringVolume + InstrumentFadeNegativeVolumeD,
+    InstrumentFadePingPongLoweringVolumeStartingWithPositiveVolumeD
+            = 2 * InstrumentFadePingPongLoweringVolume + InstrumentFadePositiveVolumeD,
+    InstrumentFadePingPongRaisingVolumeStartingWithNegativeVolumeD
+            = 2 * InstrumentFadePingPongRaisingVolume + InstrumentFadeNegativeVolumeD,
+    InstrumentFadePingPongRaisingVolumeStartingWithPositiveVolumeD
+            = 2 * InstrumentFadePingPongRaisingVolume + InstrumentFadePositiveVolumeD,
+    InstrumentFadeWrapWithNegativeVolumeD = 2 * InstrumentFadeWrap + InstrumentFadeNegativeVolumeD,
+    InstrumentFadeWrapWithPositiveVolumeD = 2 * InstrumentFadeWrap + InstrumentFadePositiveVolumeD,
+    InstrumentFadeWrapLoweringVolumeWithNegativeVolumeD
+            = 2 * InstrumentFadeWrapLoweringVolume + InstrumentFadeNegativeVolumeD,
+    InstrumentFadeWrapLoweringVolumeWithPositiveVolumeD
+            = 2 * InstrumentFadeWrapLoweringVolume + InstrumentFadePositiveVolumeD,
+    InstrumentFadeWrapRaisingVolumeWithNegativeVolumeD
+            = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadeNegativeVolumeD,
+    InstrumentFadeWrapRaisingVolumeWithPositiveVolumeD
+            = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadePositiveVolumeD,
 } inst_fade_behavior_t;
 
 struct oscillator {
@@ -118,13 +156,14 @@ struct chip_player
 
     uint8_t volume;
     int8_t volumed; 
+    // TODO: add track_fade_behavior...
+    // TODO: add a track_note_initial_volumed for things like reverse clamps
+    // TODO: add a track_note_initial_volume for things like clamps and fades
     uint8_t track_volume;
     int8_t track_volumed; 
 
     // a u8 of the inst_fade_behavior_t:
     uint8_t fade_behavior;
-    // a u8 of the inst_fade_volumed_behavior_t:
-    uint8_t fade_volumed_behavior;
     // for fade echo and other effects bouncing around:
     uint8_t fade_saved_max_volume;
     uint8_t fade_saved_min_volume;

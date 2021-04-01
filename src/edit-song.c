@@ -134,7 +134,7 @@ void editSong_line()
         {
             if (line == 0) 
             {
-                uint32_t *dst = (uint32_t *)draw_buffer + 57;
+                uint32_t *dst = (uint32_t *)draw_buffer + 48;
                 const uint32_t color = BOX_COLOR;
                 *(++dst) = color;
                 *(++dst) = color;
@@ -182,7 +182,7 @@ void editSong_line()
         case 0:
         {
             // edit track
-            uint8_t msg[] = { 'a', 'n', 't', 'h', 'e', 'm',
+            uint8_t msg[] = { 's', 'o', 'n', 'g',
                 ' ', 'X', '0' + editSong_pos/10, '0' + editSong_pos%10, '/',
                 '0' + song_length/10, '0' + song_length%10,
                 ' ', 's', 'p', 'e', 'e', 'd', ' ', '0'+(16-song_speed)/10, '0'+(16-song_speed)%10,
@@ -351,9 +351,9 @@ void editSong_line()
             break;        
         case 16:
             if (music_editor_in_menu)
-                font_render_line_doubled((uint8_t *)"select:verse menu", 16, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"select:track menu", 16, internal_line, 65535, BG_COLOR*257);
             else
-                font_render_line_doubled((uint8_t *)"select:main menu", 16, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"select:edit track", 16, internal_line, 65535, BG_COLOR*257);
             break;        
         case 18:
             font_render_line_doubled(game_message, 16, internal_line, 65535, BG_COLOR*257);

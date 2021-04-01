@@ -694,7 +694,7 @@ void editTrack_line()
             if (music_editor_in_menu)
                 font_render_line_doubled((uint8_t *)"select:instrument menu", 96, internal_line, 65535, BG_COLOR*257);
             else
-                font_render_line_doubled((uint8_t *)"select:edit song", 96, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"select:edit instrument", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 18:
             break;

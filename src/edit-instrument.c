@@ -150,7 +150,7 @@ static void editInstrument_short_command_message(uint8_t *buffer, uint8_t cmd)
             strcpy((char *)buffer, "bend");
             break;
         case InstrumentSpecial:
-            strcpy((char *)buffer, "bitcrush");
+            strcpy((char *)buffer, "???");
             break;
         case InstrumentDuty:
             strcpy((char *)buffer, "duty");
@@ -338,12 +338,72 @@ void editInstrument_render_command(int j, int y)
             param = hex_character[param];
             break;
         case InstrumentFadeBehavior:
-            // TODO: better stuff here
-            cmd = 'F';
-            if (param)
-                param = hex_character[param];
-            else
-                param = 'g';
+            switch (param)
+            {   case InstrumentFadeClampWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = 241; // lower bar
+                    break;
+                case InstrumentFadeClampWithPositiveVolumeD:
+                    cmd = '/';
+                    param = 248; // upper bar
+                    break;
+                case InstrumentFadeReverseClampWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = 248; // upper bar
+                    break;
+                case InstrumentFadeReverseClampWithPositiveVolumeD:
+                    cmd = '/';
+                    param = 241; // lower bar
+                    break;
+                case InstrumentFadePingPongStartingWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = '/';
+                    break;
+                case InstrumentFadePingPongStartingWithPositiveVolumeD:
+                    cmd = '/';
+                    param = '\\';
+                    break;
+                case InstrumentFadePingPongLoweringVolumeStartingWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = 220; // lowering mountain
+                    break;
+                case InstrumentFadePingPongLoweringVolumeStartingWithPositiveVolumeD:
+                    cmd = '/';
+                    param = 223; // lowering valley
+                    break;
+                case InstrumentFadePingPongRaisingVolumeStartingWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = 222; // rising mountain
+                    break;
+                case InstrumentFadePingPongRaisingVolumeStartingWithPositiveVolumeD:
+                    cmd = '/';
+                    param = 221; // rising valley
+                    break;
+                case InstrumentFadeWrapWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = '\\';
+                    break;
+                case InstrumentFadeWrapWithPositiveVolumeD:
+                    cmd = '/';
+                    param = '/';
+                    break;
+                case InstrumentFadeWrapLoweringVolumeWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = 223; // lowering valley
+                    break;
+                case InstrumentFadeWrapLoweringVolumeWithPositiveVolumeD:
+                    cmd = '/';
+                    param = 219; // ramp
+                    break;
+                case InstrumentFadeWrapRaisingVolumeWithNegativeVolumeD:
+                    cmd = '\\';
+                    param = 218; // drop
+                    break;
+                case InstrumentFadeWrapRaisingVolumeWithPositiveVolumeD:
+                    cmd = '/';
+                    param = 222; // rising mountain
+                    break;
+            }
             break;
         case InstrumentInertia:
             cmd = 'i';
@@ -688,7 +748,8 @@ void editInstrument_line()
             }
             break;
         case 3:
-            switch (instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]&15)
+        {   uint8_t cmd_param = instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
+            switch (cmd_param&15)
             {
                 case InstrumentBreak:
                     strcpy((char *)buffer, "end if before tkpos");
@@ -712,7 +773,56 @@ void editInstrument_line()
                     strcpy((char *)buffer, "fade magnitude");
                     break;
                 case InstrumentFadeBehavior:
-                    strcpy((char *)buffer, "fade behavior");
+                    switch (cmd_param >> 4)
+                    {   case InstrumentFadeClampWithNegativeVolumeD:
+                            strcpy((char *)buffer, "fade to zero");
+                            break;
+                        case InstrumentFadeClampWithPositiveVolumeD:
+                            strcpy((char *)buffer, "fade to max");
+                            break;
+                        case InstrumentFadeReverseClampWithNegativeVolumeD:
+                            strcpy((char *)buffer, "fade to zero, insta-max");
+                            break;
+                        case InstrumentFadeReverseClampWithPositiveVolumeD:
+                            strcpy((char *)buffer, "fade to max, insta-min");
+                            break;
+                        case InstrumentFadePingPongStartingWithNegativeVolumeD:
+                            strcpy((char *)buffer, "fade ping pong down");
+                            break;
+                        case InstrumentFadePingPongStartingWithPositiveVolumeD:
+                            strcpy((char *)buffer, "fade ping pong up");
+                            break;
+                        case InstrumentFadePingPongLoweringVolumeStartingWithNegativeVolumeD:
+                            strcpy((char *)buffer, "ping pong dn decresc.");
+                            break;
+                        case InstrumentFadePingPongLoweringVolumeStartingWithPositiveVolumeD:
+                            strcpy((char *)buffer, "ping pong up decresc.");
+                            break;
+                        case InstrumentFadePingPongRaisingVolumeStartingWithNegativeVolumeD:
+                            strcpy((char *)buffer, "ping pong dn cresc.");
+                            break;
+                        case InstrumentFadePingPongRaisingVolumeStartingWithPositiveVolumeD:
+                            strcpy((char *)buffer, "ping pong up cresc.");
+                            break;
+                        case InstrumentFadeWrapWithNegativeVolumeD:
+                            strcpy((char *)buffer, "fade wrap down");
+                            break;
+                        case InstrumentFadeWrapWithPositiveVolumeD:
+                            strcpy((char *)buffer, "fade wrap up");
+                            break;
+                        case InstrumentFadeWrapLoweringVolumeWithNegativeVolumeD:
+                            strcpy((char *)buffer, "wrap down decresc.");
+                            break;
+                        case InstrumentFadeWrapLoweringVolumeWithPositiveVolumeD:
+                            strcpy((char *)buffer, "wrap up decresc.");
+                            break;
+                        case InstrumentFadeWrapRaisingVolumeWithNegativeVolumeD:
+                            strcpy((char *)buffer, "wrap down cresc.");
+                            break;
+                        case InstrumentFadeWrapRaisingVolumeWithPositiveVolumeD:
+                            strcpy((char *)buffer, "wrap up cresc.");
+                            break;
+                    }
                     break;
                 case InstrumentInertia:
                     strcpy((char *)buffer, "note inertia");
@@ -742,6 +852,7 @@ void editInstrument_line()
             }
             font_render_line_doubled(buffer, 102, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_instrument;
+        }
         case 4:
             if ((instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]&15) == InstrumentVibrato)
             {
@@ -855,9 +966,9 @@ void editInstrument_line()
             goto maybe_show_instrument;
         case 18:
             if (music_editor_in_menu)
-                font_render_line_doubled((uint8_t *)"select:edit song", 96, internal_line, 65535, BG_COLOR*257);
-            else
                 font_render_line_doubled((uint8_t *)"select:song menu", 96, internal_line, 65535, BG_COLOR*257);
+            else
+                font_render_line_doubled((uint8_t *)"select:edit song", 96, internal_line, 65535, BG_COLOR*257);
             break;
         case 19:
             font_render_line_doubled(game_message, 36, internal_line, 65535, BG_COLOR*257);
