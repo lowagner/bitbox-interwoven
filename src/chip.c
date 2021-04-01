@@ -746,10 +746,9 @@ static void chip_update_oscillators()
                 {   // Update delta volume at top with max volume:
                     vol = max_vol;
                     chip_player[i].volumed *= -1;
-                    chip_player[i].fade_saved_max_volume =
-                    (   chip_player[i].fade_saved_max_volume + 
-                        chip_player[i].fade_saved_min_volume
-                    ) / 2;
+                    // Decrease max volume:
+                    max_vol += chip_player[i].volumed;
+                    chip_player[i].fade_saved_max_volume = max_vol > min_vol ? max_vol : min_vol;
                 }
                 else
                     ASSERT(vol < 256);
@@ -759,17 +758,15 @@ static void chip_update_oscillators()
                 break;
             case InstrumentFadeWrapLoweringVolume:
                 vol = min_vol;
-                chip_player[i].fade_saved_max_volume = 
-                (   chip_player[i].fade_saved_max_volume + 
-                    chip_player[i].fade_saved_min_volume
-                ) / 2;
+                // Decrease max volume:
+                max_vol -= chip_player[i].volumed;
+                chip_player[i].fade_saved_max_volume = max_vol > min_vol ? max_vol : min_vol;
                 break;
             case InstrumentFadeWrapRaisingVolume:
                 vol = min_vol;
-                chip_player[i].fade_saved_min_volume = 
-                (   chip_player[i].fade_saved_max_volume + 
-                    chip_player[i].fade_saved_min_volume
-                ) / 2;
+                // Increase min volume:
+                min_vol += chip_player[i].volumed;
+                chip_player[i].fade_saved_min_volume = min_vol < max_vol ? min_vol : max_vol;
                 break;
         }
         else if (vol < min_vol)
@@ -797,10 +794,9 @@ static void chip_update_oscillators()
                 {   // Update delta volume at bottom with max volume:
                     vol = min_vol;
                     chip_player[i].volumed *= -1;
-                    chip_player[i].fade_saved_min_volume =
-                    (   chip_player[i].fade_saved_max_volume + 
-                        chip_player[i].fade_saved_min_volume
-                    ) / 2;
+                    // Increase min volume:
+                    min_vol += chip_player[i].volumed;
+                    chip_player[i].fade_saved_min_volume = min_vol < max_vol ? min_vol : max_vol;
                 }
                 else
                     ASSERT(vol >= 0);
@@ -810,17 +806,15 @@ static void chip_update_oscillators()
                 break;
             case InstrumentFadeWrapLoweringVolume:
                 vol = max_vol; 
-                chip_player[i].fade_saved_max_volume = 
-                (   chip_player[i].fade_saved_max_volume + 
-                    chip_player[i].fade_saved_min_volume
-                ) / 2;
+                // Decrease max volume:
+                max_vol += chip_player[i].volumed;
+                chip_player[i].fade_saved_max_volume = max_vol > min_vol ? max_vol : min_vol;
                 break;
             case InstrumentFadeWrapRaisingVolume:
                 vol = max_vol; 
-                chip_player[i].fade_saved_min_volume = 
-                (   chip_player[i].fade_saved_max_volume + 
-                    chip_player[i].fade_saved_min_volume
-                ) / 2;
+                // Increase min volume:
+                min_vol -= chip_player[i].volumed;
+                chip_player[i].fade_saved_min_volume = min_vol < max_vol ? min_vol : max_vol;
                 break;
         }
         chip_player[i].volume = vol;
