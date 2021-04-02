@@ -263,8 +263,8 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
         case InstrumentSpecial: // s = special
             // TODO
             break;
-        case InstrumentDuty: // d = duty cycle.  param==8 makes for a square wave if waveform is WfPulse
-            oscillator[i].duty = 16384 + (param << 11);
+        case InstrumentDuty: // d = duty cycle.  param==0 makes for a square wave if waveform is WfPulse
+            oscillator[i].duty = 32768 + (param << 11);
             break;
         case InstrumentDutyDelta: // m = duty variation
             chip_player[i].dutyd = param << 4;
@@ -866,26 +866,31 @@ static inline uint16_t gen_sample()
         
         int16_t value; // [-128, 127]
 
+        uint16_t phase = oscillator[i].phase;
+        uint16_t duty = oscillator[i].duty;
         switch (oscillator[i].waveform) 
         {   // Waveform changes the timbre:
             case WfSine:
                 value = sine_table[oscillator[i].phase>>10];
                 break;
             case WfTriangle:
-                // Triangle: the part before 0x8000 raises, then it goes back
-                // down.
-                if (oscillator[i].phase < 0x8000) 
-                    value = -128 + (oscillator[i].phase >> 7);
-                else
-                    value = 127 - ((oscillator[i].phase - 0x8000) >> 7);
+                // Triangle: the part before duty raises, then it goes back down.
+                if (phase < duty) // duty is nonzero
+                    value = -128 + (phase << 8) / duty;
+                else // duty may be zero:
+                {   phase -= duty;
+                    duty = 65535 - duty;    // now duty is not zero
+                    // phase now goes between 0 and duty
+                    value = 127 - (phase << 8) / duty;
+                }
                 break;
             case WfSaw:
                 // Sawtooth: always raising.
-                value = -128 + (oscillator[i].phase >> 8);
+                value = -128 + (phase >> 8);
                 break;
             case WfPulse:
                 // Pulse: max value until we reach "duty", then min value.
-                value = (oscillator[i].phase > oscillator[i].duty) ? -128 : 127;
+                value = phase > duty ? -128 : 127;
                 break;
             case WfNoise:
                 // Noise: from the generator. Only the low order bits are used.
