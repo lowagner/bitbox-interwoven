@@ -120,7 +120,6 @@ struct oscillator {
     // TODO: remove, this doesn't do much
     uint8_t bitcrush; // 0-f level of quantization (power of 2) 
 
-    // TODO: make this do something interesting for other waves:
     uint16_t duty; // duty cycle (pulse wave only)
     uint16_t freq; // frequency
     uint16_t phase; // phase

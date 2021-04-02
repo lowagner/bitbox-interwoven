@@ -87,6 +87,11 @@ static const int8_t sine_table[] = { // 16 values per row, 64 total
     -127, -126, -125, -122, -117, -112, -106, -98, -90, -81, -71, -60, -49, -37, -25, -12,
 };
 
+// Assumes phase >= duty, updates duty to be the difference to U16_MAX and enforces phase < duty
+#define REPHASE16(phase, duty) \
+    phase -= duty; \
+    duty = 65535 - duty
+
 uint8_t instrument_max_index(uint8_t i, uint8_t j)
 {   // Returns the max index we shouldn't run (instrument command-wise) based on the current index.
     if (instrument[i].is_drum)
@@ -873,9 +878,7 @@ static inline uint16_t gen_sample()
                 if (phase < duty)
                     value = sine_table[(phase << 5) / duty];
                 else
-                {   phase -= duty;
-                    duty = 65535 - duty;    // now duty is not zero
-                    // phase now goes between 0 and duty
+                {   REPHASE16(phase, duty);
                     value = sine_table[32 + (phase << 5) / duty];
                 }
                 break;
@@ -884,15 +887,18 @@ static inline uint16_t gen_sample()
                 if (phase < duty) // duty is nonzero
                     value = -128 + (phase << 8) / duty;
                 else // duty may be zero:
-                {   phase -= duty;
-                    duty = 65535 - duty;    // now duty is not zero
-                    // phase now goes between 0 and duty
+                {   REPHASE16(phase, duty);
                     value = 127 - (phase << 8) / duty;
                 }
                 break;
             case WfSaw:
                 // Sawtooth: always raising.
-                value = -128 + (phase >> 8);
+                if (phase < duty)
+                    value = -128 + (phase << 8) / duty;
+                else // duty may be zero:
+                {   REPHASE16(phase, duty);
+                    value = -128 + (phase << 8) / duty;
+                }
                 break;
             case WfPulse:
                 // Pulse: max value until we reach "duty", then min value.
