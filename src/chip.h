@@ -27,14 +27,23 @@ extern uint8_t chip_volume;
 
 // These are our possible waveforms.
 typedef enum 
-{   WfSine = 0,  // 
+{   WfSine = 0,  // = ^v but smoother 
+    WfHalfUpSine,  // = ^_ but smoother at the beginning
+    WfHalfDownSine,  // = v'' but smoother at the beginning
     WfTriangle, // = /\/\,
+
+    WfHalfUpSaw, // = /_
+    WfHalfDownSaw, // = \''
     WfSaw, // = /|/| 
+    // TODO: 1 more
+
     WfPulse, // = |_|- (adjustable duty)
+    // TODO: 3 more
+
     WfNoise, // = !*@?
     WfRed, // = "integral" of WfNoise
     WfViolet, // = "derivative" of WfNoise
-    // TODO: potentially we can add more, up to 16 total.
+    // TODO: 1 more
 } wf_t;
 
 typedef enum 

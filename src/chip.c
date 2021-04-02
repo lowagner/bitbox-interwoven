@@ -882,6 +882,18 @@ static inline uint16_t gen_sample()
                     value = sine_table[32 + (phase << 5) / duty];
                 }
                 break;
+            case WfHalfUpSine:
+                if (phase < duty)
+                    value = sine_table[(phase << 5) / duty];
+                else
+                    value = -128;
+                break;
+            case WfHalfDownSine:
+                if (phase < duty)
+                    value = sine_table[32 + (phase << 5) / duty];
+                else
+                    value = 127;
+                break;
             case WfTriangle:
                 // Triangle: the part before duty raises, then it goes back down.
                 if (phase < duty) // duty is nonzero
@@ -890,6 +902,20 @@ static inline uint16_t gen_sample()
                 {   REPHASE16(phase, duty);
                     value = 127 - (phase << 8) / duty;
                 }
+                break;
+            case WfHalfUpSaw:
+                // Half saw: the part before duty raises, then it drops to min
+                if (phase < duty) // duty is nonzero
+                    value = -128 + (phase << 8) / duty;
+                else // duty may be zero:
+                    value = -128;
+                break;
+            case WfHalfDownSaw:
+                // Half saw: the part before duty lowers, then it maxes out
+                if (phase < duty) // duty is nonzero
+                    value = 127 - (phase << 8) / duty;
+                else // duty may be zero:
+                    value = 127;
                 break;
             case WfSaw:
                 // Sawtooth: always raising.

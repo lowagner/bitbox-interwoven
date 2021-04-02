@@ -284,9 +284,25 @@ void editInstrument_render_command(int j, int y)
                     cmd = 1;
                     param = 2;
                     break;
+                case WfHalfUpSine:
+                    cmd = 1;
+                    param = '_';
+                    break;
+                case WfHalfDownSine:
+                    cmd = 2;
+                    param = 248; // upper bar
+                    break;
                 case WfTriangle:
                     cmd = '/';
                     param = '\\';
+                    break;
+                case WfHalfUpSaw:
+                    cmd = '/';
+                    param = '_';
+                    break;
+                case WfHalfDownSaw:
+                    cmd = '\\';
+                    param = 248; // upper bar
                     break;
                 case WfSaw:
                     cmd = 3;
@@ -556,7 +572,7 @@ void editInstrument_adjust_parameter(int direction)
     if (cmd == InstrumentWaveform)
     {
         param = param+direction;
-        if (param > 240)
+        if (param > 15)
             param = WfViolet;
         // TODO: add more wavefunction types
         else if (param > WfViolet)
