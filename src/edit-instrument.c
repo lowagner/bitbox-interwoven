@@ -404,6 +404,7 @@ void editInstrument_render_command(int j, int y)
                     param = 222; // rising mountain
                     break;
             }
+            smash_together = 1;
             break;
         case InstrumentInertia:
             cmd = 'i';
