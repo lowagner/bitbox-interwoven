@@ -80,12 +80,11 @@ static const uint16_t freq_table[MAX_NOTE] = {
     0x70a3, 0x7756, 0x7e6f
 }; // 84 long.
 
-static const int8_t sine_table[] = {
+static const int8_t sine_table[] = { // 16 values per row, 64 total
     0, 12, 25, 37, 49, 60, 71, 81, 90, 98, 106, 112, 117, 122, 125, 126,
     127, 126, 125, 122, 117, 112, 106, 98, 90, 81, 71, 60, 49, 37, 25, 12,
-    0, -12, -25, -37, -49, -60, -71, -81, -90, -98, -106, -112, -117, -122,
-    -125, -126, -127, -126, -125, -122, -117, -112, -106, -98, -90, -81,
-    -71, -60, -49, -37, -25, -12
+    0, -12, -25, -37, -49, -60, -71, -81, -90, -98, -106, -112, -117, -122, -125, -126,
+    -127, -126, -125, -122, -117, -112, -106, -98, -90, -81, -71, -60, -49, -37, -25, -12,
 };
 
 uint8_t instrument_max_index(uint8_t i, uint8_t j)
@@ -267,7 +266,7 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
             oscillator[i].duty = 32768 + (param << 11);
             break;
         case InstrumentDutyDelta: // m = duty variation
-            chip_player[i].dutyd = param << 4;
+            chip_player[i].dutyd = (param + 1 + param/8) * param;
             break;
         case InstrumentRandomize:
         {   // Randomize the next command's param in the list based on this command:
@@ -871,7 +870,14 @@ static inline uint16_t gen_sample()
         switch (oscillator[i].waveform) 
         {   // Waveform changes the timbre:
             case WfSine:
-                value = sine_table[oscillator[i].phase>>10];
+                if (phase < duty)
+                    value = sine_table[(phase << 5) / duty];
+                else
+                {   phase -= duty;
+                    duty = 65535 - duty;    // now duty is not zero
+                    // phase now goes between 0 and duty
+                    value = sine_table[32 + (phase << 5) / duty];
+                }
                 break;
             case WfTriangle:
                 // Triangle: the part before duty raises, then it goes back down.
