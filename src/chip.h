@@ -29,14 +29,16 @@ extern uint8_t chip_volume;
 typedef enum 
 {   WfSine = 0,  // = ^v but smoother 
     WfTriangle, // = /\/\,
-    // could combine ^/ and v\ type idea (sine with saw)
+    // TODO: 2 more here
+    //WfSplitSine, TRY
 
     WfSaw, // = /|/|
+    WfSineSaw, // = ^/
     WfHalfUpSaw, // = /_
-    WfHalfDownSaw, // = \''
     WfSplitSaw, // .-' with the middle section being flat
 
     WfPulse, // = |_|- (adjustable duty)
+    // TODO Replace with something else:
     WfHalfUpSine,  // = ^_ but smoother at the beginning
     WfHalfDownSine,  // = v'' but smoother at the beginning
     WfInvertedSine, // bump on bottom going wrong way, bump on top going wrong way

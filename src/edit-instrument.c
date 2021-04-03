@@ -292,13 +292,13 @@ void editInstrument_render_command(int j, int y)
                     cmd = 3;
                     param = 4;
                     break;
+                case WfSineSaw:
+                    cmd = 1;
+                    param = '/';
+                    break;
                 case WfHalfUpSaw:
                     cmd = '/';
                     param = '_';
-                    break;
-                case WfHalfDownSaw:
-                    cmd = '\\';
-                    param = 248; // upper bar
                     break;
                 case WfSplitSaw:
                     cmd = 214;

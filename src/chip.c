@@ -897,8 +897,18 @@ static inline uint16_t gen_sample()
                     value = -128 + (phase << 7) / duty;
                 else // duty may be zero:
                 {   REPHASE16(phase, duty);
-                    // going from zero up to 128:
+                    // going from zero up to 127:
                     value = (phase << 7) / duty;
+                }
+                break;
+            case WfSineSaw:
+                // Sine + Sawtooth
+                if (phase < duty)
+                    value = sine_table[(phase << 5) / duty];
+                else // duty may be zero:
+                {   REPHASE16(phase, duty);
+                    // going from -128 up to 127:
+                    value = -128 + (phase << 8) / duty;
                 }
                 break;
             case WfHalfUpSaw:
@@ -907,13 +917,6 @@ static inline uint16_t gen_sample()
                     value = -128 + (phase << 8) / duty;
                 else // duty may be zero:
                     value = -128;
-                break;
-            case WfHalfDownSaw:
-                // Half saw: the part before duty lowers, then it maxes out
-                if (phase < duty) // duty is nonzero
-                    value = 127 - (phase << 8) / duty;
-                else // duty may be zero:
-                    value = 127;
                 break;
             case WfSplitSaw:
                 // Sounds like a radio-filtered saw (less low end)
