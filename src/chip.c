@@ -882,18 +882,6 @@ static inline uint16_t gen_sample()
                     value = sine_table[32 + (phase << 5) / duty];
                 }
                 break;
-            case WfHalfUpSine:
-                if (phase < duty)
-                    value = sine_table[(phase << 5) / duty];
-                else
-                    value = -128;
-                break;
-            case WfHalfDownSine:
-                if (phase < duty)
-                    value = sine_table[32 + (phase << 5) / duty];
-                else
-                    value = 127;
-                break;
             case WfTriangle:
                 // Triangle: the part before duty raises, then it goes back down.
                 if (phase < duty) // duty is nonzero
@@ -918,17 +906,39 @@ static inline uint16_t gen_sample()
                     value = 127;
                 break;
             case WfSaw:
-                // Sawtooth: always raising.
+                // Sawtooth: always raising, but at half speed.
                 if (phase < duty)
-                    value = -128 + (phase << 8) / duty;
+                    value = -128 + (phase << 7) / duty;
                 else // duty may be zero:
                 {   REPHASE16(phase, duty);
-                    value = -128 + (phase << 8) / duty;
+                    // going from zero up to 128:
+                    value = (phase << 7) / duty;
                 }
                 break;
             case WfPulse:
                 // Pulse: max value until we reach "duty", then min value.
                 value = phase > duty ? -128 : 127;
+                break;
+            case WfInvertedSine:
+                // sine bumps going the wrong way
+                if (phase < duty)
+                    value = 127 - sine_table[(phase << 5) / duty];
+                else
+                {   REPHASE16(phase, duty);
+                    value = -128 + sine_table[(phase << 5) / duty];
+                }
+                break;
+            case WfHalfUpSine:
+                if (phase < duty)
+                    value = sine_table[(phase << 5) / duty];
+                else
+                    value = -128;
+                break;
+            case WfHalfDownSine:
+                if (phase < duty)
+                    value = sine_table[32 + (phase << 5) / duty];
+                else
+                    value = 127;
                 break;
             case WfNoise:
                 // Noise: from the generator. Only the low order bits are used.
