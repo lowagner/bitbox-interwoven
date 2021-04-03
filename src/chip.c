@@ -901,6 +901,16 @@ static inline uint16_t gen_sample()
                     value = -128 + (phase << 8) / duty;
                 }
                 break;
+            case WfJumpSine:
+                // top quarter of sine wave for first half of period
+                // bottom quarter of sine wave for second half of period
+                if (phase < duty)
+                    value = sine_table[(phase << 4) / duty];
+                else
+                {   REPHASE16(phase, duty);
+                    value = sine_table[32 + (phase << 4) / duty];
+                }
+                break;
             case WfSaw:
                 // Sawtooth: always raising, but at half speed.
                 if (phase < duty)

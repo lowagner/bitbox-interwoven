@@ -28,9 +28,9 @@ extern uint8_t chip_volume;
 // These are our possible waveforms.
 typedef enum 
 {   WfSine = 0,  // = ^v but smoother 
-    WfTriangle, // = /\/\,
+    WfTriangle, // = \/
     WfSineTriangle, // '-./ half a period's sine wave followed by triangle rise
-    // TODO: 1 more here
+    WfJumpSine,  // = cc with top half, then bottom half of c's
 
     WfSaw, // = /|/|
     WfSineSaw, // = ^/
@@ -39,6 +39,7 @@ typedef enum
 
     WfPulse, // = |_|- (adjustable duty)
     // TODO Replace with something else:
+    // Maybe WfPinchedTriangle, // = /\/ but edges are pinched, or << type idea (no top, no bottom), or t^2 ramp to max (127), then -t^2 ramp to min (-128)
     WfHalfUpSine,  // = ^_ but smoother at the beginning
     WfHalfDownSine,  // = v'' but smoother at the beginning
     WfInvertedSine, // bump on bottom going wrong way, bump on top going wrong way
