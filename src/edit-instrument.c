@@ -304,10 +304,6 @@ void editInstrument_render_command(int j, int y)
                     cmd = 5;
                     param = 6;
                     break;
-                case WfInvertedSine:
-                    cmd = 217;
-                    param = 216;
-                    break;
                 case WfHalfUpSine:
                     cmd = 1;
                     param = '_';
@@ -315,6 +311,10 @@ void editInstrument_render_command(int j, int y)
                 case WfHalfDownSine:
                     cmd = 2;
                     param = 248; // upper bar
+                    break;
+                case WfInvertedSine:
+                    cmd = 217;
+                    param = 216;
                     break;
                 case WfNoise:
                     cmd = 7;

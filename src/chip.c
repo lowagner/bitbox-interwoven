@@ -919,15 +919,6 @@ static inline uint16_t gen_sample()
                 // Pulse: max value until we reach "duty", then min value.
                 value = phase > duty ? -128 : 127;
                 break;
-            case WfInvertedSine:
-                // sine bumps going the wrong way
-                if (phase < duty)
-                    value = 127 - sine_table[(phase << 5) / duty];
-                else
-                {   REPHASE16(phase, duty);
-                    value = -128 + sine_table[(phase << 5) / duty];
-                }
-                break;
             case WfHalfUpSine:
                 if (phase < duty)
                     value = sine_table[(phase << 5) / duty];
@@ -939,6 +930,15 @@ static inline uint16_t gen_sample()
                     value = sine_table[32 + (phase << 5) / duty];
                 else
                     value = 127;
+                break;
+            case WfInvertedSine:
+                // sine bumps going the wrong way
+                if (phase < duty)
+                    value = 127 - sine_table[(phase << 5) / duty];
+                else
+                {   REPHASE16(phase, duty);
+                    value = -128 + sine_table[(phase << 5) / duty];
+                }
                 break;
             case WfNoise:
                 // Noise: from the generator. Only the low order bits are used.

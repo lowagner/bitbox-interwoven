@@ -38,9 +38,9 @@ typedef enum
     // maybe /-/ with the middle section being flat
 
     WfPulse, // = |_|- (adjustable duty)
-    WfInvertedSine, // bump on bottom going wrong way, bump on top going wrong way
     WfHalfUpSine,  // = ^_ but smoother at the beginning
     WfHalfDownSine,  // = v'' but smoother at the beginning
+    WfInvertedSine, // bump on bottom going wrong way, bump on top going wrong way
 
     WfNoise, // = !*@?
     WfRed, // = "integral" of WfNoise
