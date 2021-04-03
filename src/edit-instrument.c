@@ -590,19 +590,7 @@ void editInstrument_adjust_parameter(int direction)
     uint8_t cmd = instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
     uint8_t param = cmd>>4;
     cmd &= 15;
-    if (cmd == InstrumentWaveform)
-    {
-        param = param+direction;
-        // TODO: just do (param & 15)
-        if (param > 15)
-            param = WfRedViolet;
-        else if (param > WfRedViolet)
-            param = WfSine;
-    }
-    else
-    {
-        param = (param+direction)&15;
-    }
+    param = (param + direction)&15;
     instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = cmd | (param<<4);
 
     check_instrument();

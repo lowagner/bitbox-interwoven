@@ -286,12 +286,6 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
                 if (instrument_jump_bad(inst, max_index, next_index, random))
                     break; // do not continue, do not allow this number as a jump
             }
-            else if (next_command_type == InstrumentWaveform)
-            {   // TODO: until we add more waveforms, make sure we get something not silent:
-                random %= 8;
-                if (random == 7)
-                    random = 4 + rand()%3;
-            }
             instrument[inst].cmd[next_index] = next_command_type | (random<<4);
             break;
         }
