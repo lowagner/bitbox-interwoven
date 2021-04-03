@@ -281,12 +281,17 @@ void editInstrument_render_command(int j, int y)
             switch (param)
             {
                 case WfSine:
+                    // TODO: make mk_font spit out an enum for these symbol bits
                     cmd = 1;
                     param = 2;
                     break;
                 case WfTriangle:
                     cmd = '/';
                     param = '\\';
+                    break;
+                case WfSineTriangle:
+                    cmd = 213; // sine down
+                    param = '/';
                     break;
                 case WfSaw:
                     cmd = 3;

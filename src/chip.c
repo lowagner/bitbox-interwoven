@@ -884,18 +884,28 @@ static inline uint16_t gen_sample()
                 break;
             case WfTriangle:
                 // Triangle: the part before duty raises, then it goes back down.
-                if (phase < duty) // duty is nonzero
+                if (phase < duty)
                     value = -128 + (phase << 8) / duty;
-                else // duty may be zero:
+                else
                 {   REPHASE16(phase, duty);
                     value = 127 - (phase << 8) / duty;
+                }
+                break;
+            case WfSineTriangle:
+                if (phase < duty)
+                    // Start at top of sine wave and go to bottom (e.g. 16 to 48 in the sine_table[64])
+                    value = sine_table[16 + (phase << 5) / duty];
+                else
+                {   REPHASE16(phase, duty);
+                    // go from bottom to top like a saw
+                    value = -128 + (phase << 8) / duty;
                 }
                 break;
             case WfSaw:
                 // Sawtooth: always raising, but at half speed.
                 if (phase < duty)
                     value = -128 + (phase << 7) / duty;
-                else // duty may be zero:
+                else
                 {   REPHASE16(phase, duty);
                     // going from zero up to 127:
                     value = (phase << 7) / duty;
@@ -905,7 +915,7 @@ static inline uint16_t gen_sample()
                 // Sine + Sawtooth
                 if (phase < duty)
                     value = sine_table[(phase << 5) / duty];
-                else // duty may be zero:
+                else
                 {   REPHASE16(phase, duty);
                     // going from -128 up to 127:
                     value = -128 + (phase << 8) / duty;
@@ -913,19 +923,19 @@ static inline uint16_t gen_sample()
                 break;
             case WfHalfUpSaw:
                 // Half saw: the part before duty raises, then it drops to min
-                if (phase < duty) // duty is nonzero
+                if (phase < duty)
                     value = -128 + (phase << 8) / duty;
-                else // duty may be zero:
+                else
                     value = -128;
                 break;
             case WfSplitSaw:
                 // Sounds like a radio-filtered saw (less low end)
-                if (phase < duty) // duty is nonzero
+                if (phase < duty)
                 {   value = -128 + (phase << 8) / duty;
                     if (value > 0)
                         value = 0;
                 }
-                else // duty may be zero:
+                else
                 {   REPHASE16(phase, duty);
                     value = -128 + (phase << 8) / duty;
                     if (value < 0)

@@ -29,8 +29,8 @@ extern uint8_t chip_volume;
 typedef enum 
 {   WfSine = 0,  // = ^v but smoother 
     WfTriangle, // = /\/\,
-    // TODO: 2 more here
-    //WfSineJump, // .-' half a period's sine wave
+    WfSineTriangle, // '-./ half a period's sine wave followed by triangle rise
+    // TODO: 1 more here
 
     WfSaw, // = /|/|
     WfSineSaw, // = ^/
