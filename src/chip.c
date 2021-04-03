@@ -945,12 +945,28 @@ static inline uint16_t gen_sample()
                 value = (noiseseed & 255) - 128;
                 break;
             case WfRed:
-                // Red Noise, integrated from white noise..
-                value = (rednoise & 255) - 128;
+                // Red Noise, integrated from white noise, but responds to duty != default 
+                value =
+                (   phase <= (uint16_t)(32767 - duty) ?
+                        (rednoise & 255) :
+                        (noiseseed & 255)
+                ) - 128;
                 break;
             case WfViolet:
-                // Violet Noise, derivative of white noise, at least supposedly.
-                value = (violetnoise & 255) - 128;
+                // Violet Noise, "derivative" of white noise, responds to duty != default
+                value =
+                (   phase <= (uint16_t)(32767 - duty) ?
+                        (violetnoise & 255) :
+                        (noiseseed & 255)
+                ) - 128;
+                break;
+            case WfRedViolet:
+                // Red + Violet Noise, but can be dutied
+                value =
+                (   phase < duty ?
+                        (rednoise & 255) :
+                        (violetnoise & 255)
+                ) - 128;
                 break;
             default:
                 value = 0;

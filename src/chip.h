@@ -45,7 +45,7 @@ typedef enum
     WfNoise, // = !*@?
     WfRed, // = "integral" of WfNoise
     WfViolet, // = "derivative" of WfNoise
-    // TODO: 1 more
+    WfRedViolet, // waveform flips between Red and Violet based on phase/duty.
 } wf_t;
 
 typedef enum 

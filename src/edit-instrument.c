@@ -328,6 +328,10 @@ void editInstrument_render_command(int j, int y)
                     cmd = 7;
                     param = 10;
                     break;
+                case WfRedViolet:
+                    cmd = 7;
+                    param = 216;
+                    break;
                 default:
                     cmd = ' ';
                     param = ' ';
@@ -576,10 +580,10 @@ void editInstrument_adjust_parameter(int direction)
     if (cmd == InstrumentWaveform)
     {
         param = param+direction;
+        // TODO: just do (param & 15)
         if (param > 15)
-            param = WfViolet;
-        // TODO: add more wavefunction types
-        else if (param > WfViolet)
+            param = WfRedViolet;
+        else if (param > WfRedViolet)
             param = WfSine;
     }
     else
