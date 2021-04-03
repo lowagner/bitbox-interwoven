@@ -31,11 +31,10 @@ typedef enum
     WfTriangle, // = /\/\,
     // could combine ^/ and v\ type idea (sine with saw)
 
+    WfSaw, // = /|/|
     WfHalfUpSaw, // = /_
     WfHalfDownSaw, // = \''
-    WfSaw, // = /|/| 
-    // TODO: 1 more.
-    // maybe /-/ with the middle section being flat
+    WfSplitSaw, // .-' with the middle section being flat
 
     WfPulse, // = |_|- (adjustable duty)
     WfHalfUpSine,  // = ^_ but smoother at the beginning

@@ -288,6 +288,10 @@ void editInstrument_render_command(int j, int y)
                     cmd = '/';
                     param = '\\';
                     break;
+                case WfSaw:
+                    cmd = 3;
+                    param = 4;
+                    break;
                 case WfHalfUpSaw:
                     cmd = '/';
                     param = '_';
@@ -296,9 +300,9 @@ void editInstrument_render_command(int j, int y)
                     cmd = '\\';
                     param = 248; // upper bar
                     break;
-                case WfSaw:
-                    cmd = 3;
-                    param = 4;
+                case WfSplitSaw:
+                    cmd = 214;
+                    param = 215;
                     break;
                 case WfPulse:
                     cmd = 5;

@@ -891,6 +891,16 @@ static inline uint16_t gen_sample()
                     value = 127 - (phase << 8) / duty;
                 }
                 break;
+            case WfSaw:
+                // Sawtooth: always raising, but at half speed.
+                if (phase < duty)
+                    value = -128 + (phase << 7) / duty;
+                else // duty may be zero:
+                {   REPHASE16(phase, duty);
+                    // going from zero up to 128:
+                    value = (phase << 7) / duty;
+                }
+                break;
             case WfHalfUpSaw:
                 // Half saw: the part before duty raises, then it drops to min
                 if (phase < duty) // duty is nonzero
@@ -905,14 +915,18 @@ static inline uint16_t gen_sample()
                 else // duty may be zero:
                     value = 127;
                 break;
-            case WfSaw:
-                // Sawtooth: always raising, but at half speed.
-                if (phase < duty)
-                    value = -128 + (phase << 7) / duty;
+            case WfSplitSaw:
+                // Sounds like a radio-filtered saw (less low end)
+                if (phase < duty) // duty is nonzero
+                {   value = -128 + (phase << 8) / duty;
+                    if (value > 0)
+                        value = 0;
+                }
                 else // duty may be zero:
                 {   REPHASE16(phase, duty);
-                    // going from zero up to 128:
-                    value = (phase << 7) / duty;
+                    value = -128 + (phase << 8) / duty;
+                    if (value < 0)
+                        value = 0;
                 }
                 break;
             case WfPulse:
@@ -932,6 +946,7 @@ static inline uint16_t gen_sample()
                     value = 127;
                 break;
             case WfInvertedSine:
+                // Sounds like a radio-filtered square (less low end)
                 // sine bumps going the wrong way
                 if (phase < duty)
                     value = 127 - sine_table[(phase << 5) / duty];
