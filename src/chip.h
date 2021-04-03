@@ -30,7 +30,7 @@ typedef enum
 {   WfSine = 0,  // = ^v but smoother 
     WfTriangle, // = /\/\,
     // TODO: 2 more here
-    //WfSplitSine, TRY
+    //WfSineJump, // .-' half a period's sine wave
 
     WfSaw, // = /|/|
     WfSineSaw, // = ^/
@@ -44,8 +44,8 @@ typedef enum
     WfInvertedSine, // bump on bottom going wrong way, bump on top going wrong way
 
     WfNoise, // = !*@?
-    WfRed, // = "integral" of WfNoise
-    WfViolet, // = "derivative" of WfNoise
+    WfRed, // = "integral" of WfNoise, mixes with WfNoise when duty is not default
+    WfViolet, // = "derivative" of WfNoise, mixes with WfNoise when duty is not default
     WfRedViolet, // waveform flips between Red and Violet based on phase/duty.
 } wf_t;
 

@@ -31,10 +31,10 @@ characters = [
     "*  *",
     "*  *",
     "*  *"],
-   ["* * ", # 7 - noise
-    " * *",
-    "* * ",
-    " * *"],
+   ["", # 7
+    "",
+    "",
+    ""],
    ["    ", # 8 - white noise spectrum
     "    ",
     "****",
@@ -67,70 +67,70 @@ characters = [
     "",
     "",
     ""],
-   ["    ", # 16 - center
-    " ** ",
-    " ** ",
-    "    "],
-   ["    ", # 17 - right
-    "  **",
-    "  **",
-    "    "],
-   ["    ", # 18 - left/right
-    "*  *",
-    "*  *",
-    "    "],
-   ["    ", # 19 - left
-    "**  ",
-    "**  ",
-    "    "],
-   ["    ", # 20 - center, down
-    "    ",
-    " ** ",
-    " ** "],
-   ["    ", # 21 - right, down
-    "    ",
-    "  **",
-    "  **"],
-   ["    ", # 22 - left/right, down
-    "    ",
-    "*  *",
-    "*  *"],
-   ["    ", # 23 - left, down
-    "    ",
-    "**  ",
-    "**  "],
-   [" ** ", # 24 - center, up/down
-    "    ",
-    "    ",
-    " ** "],
-   ["  **", # 25 - right, up/down
-    "    ",
-    "    ",
-    "  **"],
-   ["****", # 26 - left/right, up/down
-    "*  *",
-    "*  *",
-    "****"],
-   ["**  ", # 27 - left, up/down
-    "    ",
-    "    ",
-    "**  "],
-   [" ** ", # 28 - center, up
-    " ** ",
-    "    ",
-    "    "],
-   ["  **", # 29 - right, up
-    "  **",
-    "    ",
-    "    "],
-   ["*  *", # 30 - left/right, up
-    "*  *",
-    "    ",
-    "    "],
-   ["**  ", # 31 - left, up
-    "**  ",
-    "    ",
-    "    "],
+   ["", # 16
+    "",
+    "",
+    ""],
+   ["", # 17
+    "",
+    "",
+    ""],
+   ["", # 18
+    "",
+    "",
+    ""],
+   ["", # 19
+    "",
+    "",
+    ""],
+   ["", # 20
+    "",
+    "",
+    ""],
+   ["", # 21
+    "",
+    "",
+    ""],
+   ["", # 22
+    "",
+    "",
+    ""],
+   ["", # 23
+    "",
+    "",
+    ""],
+   ["", # 24
+    "",
+    "",
+    ""],
+   ["", # 25
+    "",
+    "",
+    ""],
+   ["", # 26
+    "",
+    "",
+    ""],
+   ["", # 27
+    "",
+    "",
+    ""],
+   ["", # 28
+    "",
+    "",
+    ""],
+   ["", # 29
+    "",
+    "",
+    ""],
+   ["", # 30
+    "",
+    "",
+    ""],
+   ["", # 31
+    "",
+    "",
+    ""],
    ["    ", # ' '
     "    ",
     "    ",
@@ -187,7 +187,7 @@ characters = [
     " ***",
     "    ",
     "    "],
-   ["    ", # .
+   ["    ", # . = 46
     "    ",
     " ** ",
     " ** "],
@@ -851,14 +851,14 @@ characters = [
     "",
     "",
     ""],
-   ["", 
-    "",
-    "",
-    ""],
-   ["", 
-    "",
-    "",
-    ""],
+   ["*   ", # 212 - start of sine jump
+    " *  ",
+    "  **",
+    "    "],
+   ["    ", # 213 - end of sine jump
+    "**  ",
+    "  * ",
+    "   *"],
    ["    ", # 214 - start of split-saw
     "    ",
     " ***",
@@ -903,67 +903,67 @@ characters = [
     "****",
     "****",
     "****"],
-   ["* * ",  # RANDOMIZE 1
+   ["* * ", # 225 - RANDOMIZE 1
     " * *",
     "* * ",
     " * *"],
-   [" * *", # RANDOMIZE 2
+   [" * *", # 226 - RANDOMIZE 2
     "* * ",
     " * *",
     "* * "],
-   ["   *", # RANDOMIZE 3
+   ["   *", # 227 - RANDOMIZE 3
     "*   ",
     "    ",
     " *  "],
-   ["    ", # RANDOMIZE 4
+   ["    ", # 228 - RANDOMIZE 4
     "    ",
     "****",
     "****"],
-   ["    ", # RANDOMIZE 5
+   ["    ", # 229 - RANDOMIZE 5
     "****",
     "****",
     "    "],
-   ["****", # RANDOMIZE 6
+   ["****", # 230 - RANDOMIZE 6
     "****",
     "    ",
     "    "],
-   ["****", # RANDOMIZE 7
+   ["****", # 231 - RANDOMIZE 7
     "    ",
     "    ",
     "****"],
-   ["    ", # RANDOMIZE 8
+   ["    ", # 232 - RANDOMIZE 8
     "    ",
     "    ",
     "****"],
-   ["    ", # RANDOMIZE 9
+   ["    ", # 233 - RANDOMIZE 9
     "    ",
     "****",
     "    "],
-   ["    ", # RANDOMIZE 10
+   ["    ", # 234 - RANDOMIZE 10
     "****",
     "    ",
     "    "],
-   ["****", # RANDOMIZE 11
+   ["****", # 235 - RANDOMIZE 11
     "    ",
     "    ",
     "    "],
-   ["*   ", # RANDOMIZE 12
+   ["*   ", # 236 - RANDOMIZE 12
     "*   ",
     "*   ",
     "*   "],
-   [" *  ", # RANDOMIZE 13
+   [" *  ", # 237 - RANDOMIZE 13
     " *  ",
     " *  ",
     " *  "],
-   ["  * ", # RANDOMIZE 14
+   ["  * ", # 238 - RANDOMIZE 14
     "  * ",
     "  * ",
     "  * "],
-   ["   *", # RANDOMIZE 15
+   ["   *", # 239 - RANDOMIZE 15
     "   *",
     "   *",
     "   *"], 
-   ["    ", # 240 -> zero
+   ["    ", # 240 -> zero, require empty
     "    ",
     "    ",
     "    "],
@@ -1038,6 +1038,7 @@ with open("src/font.c", 'w') as f:
         f.write("[%d]="%starting_index)
     else:
         f.write("  ")
+    char_set = set()
     for i in range(len(characters)):
         char = characters[i]
         x = 0
@@ -1047,6 +1048,9 @@ with open("src/font.c", 'w') as f:
                 if c != ' ':
                     x |= 1<<power
                 power += 1
+        if x != 0 and x in char_set and i < 224: # randoms can redo earlier things
+            raise Exception('character at %d already in set'%i)
+        char_set.add(x)
         if i + 1 == len(characters):
             f.write("%d\n"%x)
         else:

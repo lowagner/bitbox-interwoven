@@ -321,19 +321,19 @@ void editInstrument_render_command(int j, int y)
                     param = 216;
                     break;
                 case WfNoise:
-                    cmd = 7;
+                    cmd = 225;
                     param = 8;
                     break;
                 case WfRed:
-                    cmd = 7;
+                    cmd = 225;
                     param = 9;
                     break;
                 case WfViolet:
-                    cmd = 7;
+                    cmd = 225;
                     param = 10;
                     break;
                 case WfRedViolet:
-                    cmd = 7;
+                    cmd = 225;
                     param = 216;
                     break;
                 default:
