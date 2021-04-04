@@ -293,9 +293,9 @@ void editInstrument_render_command(int j, int y)
                     cmd = 213; // sine down
                     param = '/';
                     break;
-                case WfJumpSine:
-                    cmd = 210;
-                    param = 211;
+                case WfHalfUpSine:
+                    cmd = 1;
+                    param = '_';
                     break;
                 case WfSaw:
                     cmd = 3;
@@ -317,9 +317,9 @@ void editInstrument_render_command(int j, int y)
                     cmd = 5;
                     param = 6;
                     break;
-                case WfHalfUpSine:
-                    cmd = 1;
-                    param = '_';
+                case WfJumpSine:
+                    cmd = 210;
+                    param = 211;
                     break;
                 case WfHalfDownSine:
                     cmd = 2;

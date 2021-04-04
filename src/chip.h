@@ -30,7 +30,9 @@ typedef enum
 {   WfSine = 0,  // = ^v but smoother 
     WfTriangle, // = \/
     WfSineTriangle, // '-./ half a period's sine wave followed by triangle rise
-    WfJumpSine,  // = cc with top half, then bottom half of c's
+    // TODO Replace with something else, something breathy and siney sounding
+    // try a sine wave with an extended top or bottom, or middle silence
+    WfHalfUpSine,  // = ^_ but smoother at the beginning
 
     WfSaw, // = /|/|
     WfSineSaw, // = ^/
@@ -38,9 +40,7 @@ typedef enum
     WfSplitSaw, // .-' with the middle section being flat
 
     WfPulse, // = |_|- (adjustable duty)
-    // TODO Replace with something else:
-    // Maybe WfPinchedTriangle, // = /\/ but edges are pinched, or << type idea (no top, no bottom), or t^2 ramp to max (127), then -t^2 ramp to min (-128)
-    WfHalfUpSine,  // = ^_ but smoother at the beginning
+    WfJumpSine,  // = cc with top half, then bottom half of c's
     WfHalfDownSine,  // = v'' but smoother at the beginning
     WfInvertedSine, // bump on bottom going wrong way, bump on top going wrong way
 
