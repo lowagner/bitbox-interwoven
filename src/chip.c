@@ -90,7 +90,7 @@ static const int8_t sine_table[] = { // 16 values per row, 64 total
 // Assumes phase >= duty, updates duty to be the difference to U16_MAX and enforces phase < duty
 #define REPHASE16(phase, duty) \
     phase -= duty; \
-    duty = 65535 - duty
+    duty = 65536 - duty
 
 uint8_t instrument_max_index(uint8_t i, uint8_t j)
 {   // Returns the max index we shouldn't run (instrument command-wise) based on the current index.
