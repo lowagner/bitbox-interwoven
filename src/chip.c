@@ -885,6 +885,12 @@ static inline uint16_t gen_sample()
                     value = 127 - (phase << 8) / duty;
                 }
                 break;
+            case WfHalfSine:
+                if (phase < duty)
+                    value = sine_table[(phase << 6) / duty];
+                else
+                    value = 0;
+                break;
             case WfSineTriangle:
                 if (phase < duty)
                     // Start at top of sine wave and go to bottom (e.g. 16 to 48 in the sine_table[64])
@@ -894,12 +900,6 @@ static inline uint16_t gen_sample()
                     // go from bottom to top like a saw
                     value = -128 + (phase << 8) / duty;
                 }
-                break;
-            case WfHalfUpSine:
-                if (phase < duty)
-                    value = sine_table[(phase << 5) / duty];
-                else
-                    value = -128;
                 break;
             case WfSaw:
                 // Sawtooth: always raising, but at half speed.

@@ -289,13 +289,13 @@ void editInstrument_render_command(int j, int y)
                     cmd = '/';
                     param = '\\';
                     break;
+                case WfHalfSine:
+                    cmd = 220; // most of a sine wave
+                    param = 233; // remaining flat part
+                    break;
                 case WfSineTriangle:
                     cmd = 213; // sine down
                     param = '/';
-                    break;
-                case WfHalfUpSine:
-                    cmd = 1;
-                    param = '_';
                     break;
                 case WfSaw:
                     cmd = 3;
