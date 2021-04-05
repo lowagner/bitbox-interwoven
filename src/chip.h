@@ -48,7 +48,8 @@ typedef enum
     WfRedViolet, // waveform flips between Red and Violet based on phase/duty.
 } wf_t;
 
-typedef enum 
+// TODO: double check our order is ok:
+typedef enum
 {   InstrumentBreak = 0,
     InstrumentPan = 1,
     InstrumentWaveform = 2,
@@ -60,6 +61,7 @@ typedef enum
     InstrumentInertia = 8,
     InstrumentVibrato = 9, // Frequency oscillation
     InstrumentBend = 10,
+    // TODO: actually figure something out here:
     InstrumentSpecial = 11,
     InstrumentDuty = 12,
     InstrumentDutyDelta = 13,
@@ -123,6 +125,31 @@ typedef enum
     InstrumentFadeWrapRaisingVolumeWithPositiveVolumeD
             = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadePositiveVolumeD,
 } inst_fade_behavior_t;
+
+// TODO:
+typedef enum
+{   TrackBreak = 0,
+    TrackOctave = 1,
+    TrackInstrument = 2,
+    TrackVolume = 3,
+    TrackFadeInOrOut = 4,
+    // Also counts as ArpHighNote:
+    TrackNote = 5,
+    TrackWait = 6,
+    TrackArpLowNote = 7,
+    TrackArpScale = 8,
+    // TODO: something better than vibrato, we can just switch an instrument.
+    TrackVibrato = 9, // Frequency oscillation
+    TrackGlobalTranspose = 10,
+    TrackGlobalSpeed = 11,
+    TrackGlobalTrackLength = 12,
+    // TODO: Execute next command if some condition holds, otherwise following.
+    // Argument provides the condition.
+    TrackConditional = 13,
+    TrackRandomize = 14,
+    TrackJump = 15,
+    // Nothing 16 or above is allowed
+} track_cmd_t;
 
 struct oscillator {
     uint8_t pan;
