@@ -90,7 +90,9 @@ static const int8_t sine_table[] = { // 16 values per row, 64 total
 // Assumes phase >= duty, updates duty to be the difference to U16_MAX and enforces phase < duty
 #define REPHASE16(phase, duty) \
     phase -= duty; \
-    duty = 65536 - duty
+    duty = 65536 - duty; \
+    ASSERT(duty != 0); \
+    ASSERT(phase < duty)
 
 uint8_t instrument_max_index(uint8_t i, uint8_t j)
 {   // Returns the max index we shouldn't run (instrument command-wise) based on the current index.
@@ -829,6 +831,8 @@ static void chip_update_oscillators()
         oscillator[i].volume = (chip_player[i].volume * chip_player[i].track_volume * chip_volume) >> 16;
 
         oscillator[i].duty += chip_player[i].dutyd << 6;
+        if (!oscillator[i].duty || oscillator[i].duty == 65535)
+            oscillator[i].duty = 1;
     }
 }
 
@@ -921,12 +925,14 @@ static inline uint16_t gen_sample()
                     value = -128 + (phase << 8) / duty;
                 }
                 break;
-            case WfHalfUpSaw:
-                // Half saw: the part before duty raises, then it drops to min
+            case WfSquareTriangle:
+                // Quickly from max to min, stay at min for half a cycle, then triangle back to max 
                 if (phase < duty)
-                    value = -128 + (phase << 8) / duty;
+                    value = phase < duty/2 ? 127 - (phase << 8) / duty : -128;
                 else
-                    value = -128;
+                {   REPHASE16(phase, duty);
+                    value = phase < duty/2 ? -128 : -128 + (phase << 8) / duty;
+                }
                 break;
             case WfSplitSaw:
                 // Sounds like a radio-filtered saw (less low end)

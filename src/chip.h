@@ -34,7 +34,7 @@ typedef enum
 
     WfSaw, // = /|/|
     WfSineSaw, // = ^/
-    WfHalfUpSaw, // = /_
+    WfSquareTriangle, // = \_/
     WfSplitSaw, // .-' with the middle section being flat
 
     WfPulse, // = |_|- (adjustable duty)

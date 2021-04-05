@@ -839,7 +839,7 @@ characters = [
     "",
     "",
     ""],
-   ["", 
+   ["",
     "",
     "",
     ""],
@@ -851,10 +851,10 @@ characters = [
     "    ",
     "*   ",
     " ** "],
-   ["", # 212
-    "",
-    "",
-    ""],
+   ["*   ", # 212
+    "*   ",
+    " *  ",
+    "  **"],
    ["**  ", # 213 - sine down
     "  * ",
     "   *",
@@ -1038,7 +1038,7 @@ with open("src/font.c", 'w') as f:
         f.write("[%d]="%starting_index)
     else:
         f.write("  ")
-    char_set = set()
+    char_map = {}
     for i in range(len(characters)):
         char = characters[i]
         x = 0
@@ -1048,9 +1048,9 @@ with open("src/font.c", 'w') as f:
                 if c != ' ':
                     x |= 1<<power
                 power += 1
-        if x != 0 and x in char_set and i < 224: # randoms can redo earlier things
-            raise Exception('character at %d already in set'%i)
-        char_set.add(x)
+        if x != 0 and x in char_map and i < 224: # randoms can redo earlier things
+            raise Exception('character at %d already in map at %d'%(i, char_map[x]))
+        char_map[x] = i
         if i + 1 == len(characters):
             f.write("%d\n"%x)
         else:

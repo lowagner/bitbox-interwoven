@@ -305,9 +305,9 @@ void editInstrument_render_command(int j, int y)
                     cmd = 1;
                     param = '/';
                     break;
-                case WfHalfUpSaw:
-                    cmd = '/';
-                    param = '_';
+                case WfSquareTriangle:
+                    cmd = 212;
+                    param = 11;
                     break;
                 case WfSplitSaw:
                     cmd = 214;
