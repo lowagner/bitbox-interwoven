@@ -139,12 +139,14 @@ typedef enum
     TrackArpLowNote = 7,
     TrackArpScale = 8,
     // TODO: something better than vibrato, we can just switch an instrument.
+    // Maybe we can add to the oscillator.bitcrush/special/static
     TrackVibrato = 9, // Frequency oscillation
     TrackGlobalTranspose = 10,
     TrackGlobalSpeed = 11,
     TrackGlobalTrackLength = 12,
     // TODO: Execute next command if some condition holds, otherwise following.
     // Argument provides the condition.
+    // TODO: show entire track, since jumps can go anywhere??
     TrackConditional = 13,
     TrackRandomize = 14,
     TrackJump = 15,
