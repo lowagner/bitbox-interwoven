@@ -151,12 +151,12 @@ typedef enum
     // Nothing 16 or above is allowed
 } track_cmd_t;
 
+// TODO: just move into chip_player
 struct oscillator {
     uint8_t pan;
     uint8_t volume;
     uint8_t waveform; // waveform (from the enum above)
-    // TODO: remove, this doesn't do much
-    uint8_t bitcrush; // 0-f level of quantization (power of 2) 
+    uint8_t bitcrush;
 
     uint16_t duty; // duty cycle (pulse wave only)
     uint16_t freq; // frequency

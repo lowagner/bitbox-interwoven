@@ -267,7 +267,12 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
                 chip_player[i].bendd = -(16-param) - (16-param)*(16-param)/4;
             break;
         case InstrumentSpecial: // s = special
-            // TODO
+            if (param == 0)
+                oscillator[i].bitcrush = 0;
+            else if (param > 0)
+                oscillator[i].bitcrush = (oscillator[i].bitcrush & 240) | param;
+            else
+                oscillator[i].bitcrush = (oscillator[i].bitcrush & 15) | ((16 - param) << 4);
             break;
         case InstrumentDuty: // d = duty cycle.  param==0 makes for a square wave if waveform is WfPulse
             oscillator[i].duty = 32768 + (param << 11);
@@ -1014,10 +1019,20 @@ static inline uint16_t gen_sample()
         oscillator[i].phase += oscillator[i].freq / 4;
 
         // bit crusher effect; bitcrush == 0 does nothing:
-        if (oscillator[i].bitcrush < 7)
-            value |= ((1<<oscillator[i].bitcrush) - 1);
+        int crush = oscillator[i].bitcrush;
+        if (!crush)
+        {}
         else
-            value &= 85>>(oscillator[i].bitcrush-7);
+        {
+            if (value > 0)
+            {   crush &= 15;
+                value = (value >> crush) << crush;
+            }
+            else if (value < 0)
+            {   crush >>= 4;
+                value = -(((-value) >> crush) << crush);
+            }
+        }
 
         // addition has range [-8160,7905], roughly +- 2**13
         int16_t add = (oscillator[i].volume * value) >> 2;
