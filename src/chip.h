@@ -138,12 +138,10 @@ typedef enum
     TrackWait = 6,
     TrackArpLowNote = 7,
     TrackArpScale = 8,
-    // TODO: something better than vibrato, we can just switch an instrument.
-    // Maybe we can add to the oscillator.bitcrush/special/static
     TrackVibrato = 9, // Frequency oscillation
-    TrackGlobalTranspose = 10,
-    TrackGlobalSpeed = 11,
-    TrackGlobalTrackLength = 12,
+    TrackInertia = 10,
+    TrackBend = 11,
+    TrackStatic = 12,
     // TODO: Execute next command if some condition holds, otherwise following.
     // Argument provides the condition.
     // TODO: show entire track, since jumps can go anywhere??
@@ -152,6 +150,27 @@ typedef enum
     TrackJump = 15,
     // Nothing 16 or above is allowed
 } track_cmd_t;
+
+// TODO: maybe switch to song commands
+typedef enum
+{   SongBreak = 0,
+    SongSpeed = 1,
+    SongTranspose = 2,
+    SongVolume = 3,
+    SongFadeInOrOut = 4,
+    SongPlayerOneNextTrack = 5,
+    SongPlayerTwoNextTrack = 6,
+    SongPlayerThreeNextTrack = 7,
+    SongPlayerFourNextTrack = 8,
+    SongRepeatJustSetTrack = 9,
+    SongPlayTracks = 10, // Essentially track length
+    SongSquarify = 11,
+    SongStatic = 12,
+    SongConditional = 13,
+    SongRandomize = 14,
+    SongJump = 15,
+    // Nothing 16 or above is allowed
+} song_cmd_t;
 
 // TODO: just move into chip_player
 struct oscillator {
@@ -229,6 +248,7 @@ struct chip_player
 void chip_reset_player(int i);
 extern struct chip_player chip_player[CHIP_PLAYERS];
 
+// TODO: maybe switch to song_command
 extern uint16_t chip_song[MAX_SONG_LENGTH];
 
 // TODO: preface with chip_ and probably change pos to position or abs_position
