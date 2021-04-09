@@ -153,20 +153,39 @@ typedef enum
 
 // TODO: maybe switch to song commands
 typedef enum
-{   SongBreak = 0,
+{   // Parameter indicates how long to wait before repeating.
+    SongBreak = 0,
     SongSpeed = 1,
     SongTranspose = 2,
     SongVolume = 3,
     SongFadeInOrOut = 4,
-    SongPlayerOneNextTrack = 5,
-    SongPlayerTwoNextTrack = 6,
-    SongPlayerThreeNextTrack = 7,
-    SongPlayerFourNextTrack = 8,
-    SongRepeatJustSetTrack = 9,
-    SongPlayTracks = 10, // Essentially track length
-    SongSquarify = 11,
-    SongStatic = 12,
-    SongConditional = 13,
+    // 1,2,4,8 -> players 1-4, bitwise OR'd.  15 and 0 mean all players.
+    SongChoosePlayers = 5,
+    SongSetTrackForPlayers = 6,
+    SongRepeatJustSetTrack = 7
+    SongPlayTracks = 8, // Essentially track length
+    // TODO: see if we want to do other effects:
+    SongSquarify = 9,
+    SongStatic = 10,
+    SongSetVariableA = 11,
+    SongSetVariableB = 12,
+    // 0 - do e then 2
+    // 1 - do f then 3
+    // 2 - If A > 0, execute next command, otherwise following
+    // 3 - If B > 0, execute next command, otherwise following
+    // 4 - If A == 0, execute next command, otherwise following
+    // 5 - If B == 0, execute next command, otherwise following.
+    // 6 - If Variable A is less than Variable B, execute next command
+    // 7 - If Variable A is equal to Variable B, execute next command
+    // 8 - If Variable A is greater than Variable B, execute next command
+    // 9 - Swap Variable A and B
+    // a - A = A + B, i.e. Add Variable B to Variable A
+    // b - A = A * B
+    // c - A = A % B
+    // d - A = A / B
+    // e - Decrement Variable A without wraparound.  (i.e. if A, --A)
+    // f - Decrement Variable B without wraparound.  (i.e. if B, --B)
+    SongSpecial = 13,
     SongRandomize = 14,
     SongJump = 15,
     // Nothing 16 or above is allowed
