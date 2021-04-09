@@ -266,8 +266,8 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
             else
                 chip_player[i].bendd = -(16-param) - (16-param)*(16-param)/4;
             break;
-        case InstrumentSpecial: // s = special
-            oscillator[i].bitcrush = param;
+        case InstrumentStatic: // s = static
+            oscillator[i].static_amt = param;
             break;
         case InstrumentDuty: // d = duty cycle.  param==0 makes for a square wave if waveform is WfPulse
             oscillator[i].duty = 32768 + (param << 11);
@@ -1013,11 +1013,10 @@ static inline uint16_t gen_sample()
         // Compute the oscillator phase (position in the waveform) for next time
         oscillator[i].phase += oscillator[i].freq / 4;
 
-        // bit crusher effect; bitcrush == 0 does nothing:
-        int crush = oscillator[i].bitcrush;
-        if (crush && phase < duty/2)
+        int static_amt = oscillator[i].static_amt;
+        if (static_amt && phase < duty/2)
         {   // TODO: this doesn't do anything fun for whitenoise, we should make it exciting
-            value = (value * (16 - crush) + crush * (((noiseseed >> 4) & 255) - 128)) / 16;
+            value = (value * (16 - static_amt) + static_amt * (((noiseseed >> 4) & 255) - 128)) / 16;
         }
 
         // addition has range [-8160,7905], roughly +- 2**13

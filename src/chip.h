@@ -61,8 +61,7 @@ typedef enum
     InstrumentInertia = 8,
     InstrumentVibrato = 9, // Frequency oscillation
     InstrumentBend = 10,
-    // TODO: actually figure something out here:
-    InstrumentSpecial = 11,
+    InstrumentStatic = 11,
     InstrumentDuty = 12,
     InstrumentDutyDelta = 13,
     InstrumentRandomize = 14,
@@ -145,7 +144,9 @@ typedef enum
     // TODO: Execute next command if some condition holds, otherwise following.
     // Argument provides the condition.
     // TODO: show entire track, since jumps can go anywhere??
-    TrackConditional = 13,
+    // 0 - Use TrackArpLowNote for Arpeggio scale
+    // 1 - Use TrackNote as foundation for Arpeggio scale ??
+    TrackSpecial = 13,
     TrackRandomize = 14,
     TrackJump = 15,
     // Nothing 16 or above is allowed
@@ -162,7 +163,7 @@ typedef enum
     // 1,2,4,8 -> players 1-4, bitwise OR'd.  15 and 0 mean all players.
     SongChoosePlayers = 5,
     SongSetTrackForPlayers = 6,
-    SongRepeatJustSetTrack = 7
+    SongRepeatJustSetTrack = 7,
     SongPlayTracks = 8, // Essentially track length
     // TODO: see if we want to do other effects:
     SongSquarify = 9,
@@ -196,7 +197,7 @@ struct oscillator {
     uint8_t pan;
     uint8_t volume;
     uint8_t waveform; // waveform (from the enum above)
-    uint8_t bitcrush;
+    uint8_t static_amt;
 
     uint16_t duty; // duty cycle (pulse wave only)
     uint16_t freq; // frequency

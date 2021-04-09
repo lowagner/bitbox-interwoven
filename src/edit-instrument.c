@@ -149,8 +149,8 @@ static void editInstrument_short_command_message(uint8_t *buffer, uint8_t cmd)
         case InstrumentBend:
             strcpy((char *)buffer, "bend");
             break;
-        case InstrumentSpecial:
-            strcpy((char *)buffer, "???");
+        case InstrumentStatic:
+            strcpy((char *)buffer, "static");
             break;
         case InstrumentDuty:
             strcpy((char *)buffer, "duty");
@@ -463,8 +463,8 @@ void editInstrument_render_command(int j, int y)
                 param = hex_character[16-param];
             }
             break;
-        case InstrumentSpecial:
-            cmd = 9;
+        case InstrumentStatic:
+            cmd = 225;
             param = hex_character[param];
             break;
         case InstrumentDuty:
@@ -859,9 +859,9 @@ void editInstrument_line()
                 case InstrumentBend:
                     strcpy((char *)buffer, "bend");
                     break;
-                case InstrumentSpecial:
+                case InstrumentStatic:
                     // TODO:
-                    strcpy((char *)buffer, "???");
+                    strcpy((char *)buffer, "static amount");
                     break;
                 case InstrumentDuty:
                     strcpy((char *)buffer, "duty");
