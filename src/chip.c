@@ -148,11 +148,11 @@ int track_jump_bad(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j)
             case TRACK_JUMP:
                 j = 2*(chip_track[t][i][j]>>4);
                 break;
-            case TRACK_WAIT:
+            case TrackWait:
             case TRACK_NOTE_WAIT:
                 // We found a wait, this jump is ok.
                 return 0;
-            case TRACK_BREAK:
+            case TrackBreak:
                 if ((chip_track[t][i][j]>>4) == 0)
                     return 0;
             default:
@@ -167,6 +167,7 @@ static uint8_t randomize(uint8_t arg)
 {   // Returns a random number between 0 and 15
     switch (arg)
     {   // The argument specifies what kind of randomization is desired.
+        // TODO: Name these arguments using an enum
         case 0:
             return rand()%16;
         case 1:
@@ -174,7 +175,7 @@ static uint8_t randomize(uint8_t arg)
         case 2:
             return (rand()%8)*2;
         case 3:
-            return 1 + 7*(rand()%3);
+            return (-1 + (rand()%3)) & 15;
         case 4:
             return rand()%8;
         case 5:
@@ -310,6 +311,10 @@ void chip_reset_player(int i)
     chip_instrument_for_next_note_for_player[i] = i;
     chip_player[i].instrument = i;
     chip_player[i].cmd_index = 0;
+    chip_player[i].track_arp_low_note = 12;
+    chip_player[i].track_arp_current_note = 12;
+    chip_player[i].track_arp_scale = 0;
+    chip_player[i].track_arp_wait = 1;
     chip_player[i].track_cmd_index = 0;
     chip_player[i].track_wait = 0;
     chip_player[i].volume = 0;
@@ -447,13 +452,13 @@ static void track_run_command(uint8_t i, uint8_t cmd)
     uint8_t param = cmd >> 4;
     switch(cmd&15) 
     {   // Command type is in lower nibble, param was from upper nibble.
-        case TRACK_BREAK: // f = wait til a given quarter note, or break if passed that.
+        case TrackBreak: // f = wait til a given quarter note, or break if passed that.
             if (4*param > track_pos)
                 chip_player[i].track_wait = 4*param - track_pos;
             else
                 chip_player[i].track_cmd_index = MAX_TRACK_LENGTH; // end track commmands
             break;
-        case TRACK_OCTAVE: // O = octave, or + or - for relative octave
+        case TrackOctave: // O = octave, or + or - for relative octave
             if (param < 7)
                 chip_player[i].octave = param;
             else if (param == 7)
@@ -485,22 +490,55 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                     chip_player[i].octave -= delta;
             }
             break;
-        case TRACK_INSTRUMENT:
+        case TrackInstrument:
             chip_instrument_for_next_note_for_player[i] = param;
             break;
-        case TRACK_VOLUME: // v = volume
+        case TrackVolume: // v = volume
             chip_player[i].track_volume = param*17;
             break;
-        case TRACK_NOTE: // 
+        case TrackNote: // 
             chip_play_note_internal(i, param);
             break;
-        case TRACK_WAIT: // w = wait 
+        case TrackWait: // w = wait 
             if (param)
                 chip_player[i].track_wait = param;
             else
                 chip_player[i].track_wait = 16;
             break;
-        case TRACK_NOTE_WAIT:
+        case TrackArpNote:
+            // Plays a note in the scale (if param > 11) or sets the low note in the arpeggio and plays that.
+            // In either case, we also set a following wait based on the track arpeggio wait.
+            if (param > 11)
+            switch (param)
+            {   case 12:
+                    chip_player[i].track_arp_current_note = chip_player[i].track_arp_low_note;
+                    break;
+                case 13:
+                    // Technically this can be off the scale, but that can be fun:
+                    chip_player[i].track_arp_current_note = chip_player[i].track_note;
+                    break;
+                case 14:
+                    // increment arpeggio
+                    // TODO based on scale.
+                    if (++chip_player[i].track_arp_current_note > chip_player[i].track_note)
+                        chip_player[i].track_arp_current_note = chip_player[i].track_note;
+                    break;
+                case 15:
+                    // decrement arpeggio
+                    // TODO based on scale:
+                    if (--chip_player[i].track_arp_current_note < chip_player[i].track_arp_low_note)
+                        chip_player[i].track_arp_current_note = chip_player[i].track_arp_low_note;
+                    break;
+            }
+            else
+            {   uint8_t note = param + chip_player[i].octave * 12
+                chip_player[i].track_arp_low_note = note;
+                chip_player[i].track_arp_current_note = chip_player[i].track_arp_low_note;
+            }
+            chip_play_note_internal(i, chip_player[i].track_arp_current_note);
+            chip_player[i].track_wait = chip_player[i].track_arp_wait;
+            break;
+        case TrackArpScale:
         {   // hit a note relative to previous, and wait based on parameter
             // lower 2 bits indicate how long to wait:
             chip_player[i].track_wait = (param&3)+1;
@@ -538,12 +576,12 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                 param = 16;
             chip_player[i].track_volumed = -param - param*param/15;
             break;
-        case TRACK_INERTIA: // i = inertia (auto note slides)
-            chip_player[i].track_inertia = param;
-            break;
-        case TRACK_VIBRATO: // ~ = vibrato depth
+        case TrackVibrato: // ~ = vibrato depth
             chip_player[i].track_vibrato_depth = (param&3)*3 + (param>3)*2;
             chip_player[i].track_vibrato_rate = 1 + (param & 12)/2;
+            break;
+        case TrackInertia: // i = inertia (auto note slides)
+            chip_player[i].track_inertia = param;
             break;
         case TRACK_TRANSPOSE: // T = global transpose
             if (param == 0) // reset song transpose

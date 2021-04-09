@@ -453,13 +453,11 @@ void editInstrument_render_command(int j, int y)
             break;
         case InstrumentBend:
             if (param < 8)
-            {
-                cmd = 11; // bend up
+            {   cmd = 11; // bend up
                 param = hex_character[param];
             }
             else
-            {
-                cmd = 12; // bend down
+            {   cmd = 12; // bend down
                 param = hex_character[16-param];
             }
             break;

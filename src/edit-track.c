@@ -43,37 +43,31 @@ void editTrack_short_command_message(uint8_t *buffer, uint8_t cmd)
 {
     switch (cmd&15)
     {
-        case TRACK_BREAK:
+        case TrackBreak:
             strcpy((char *)buffer, "break");
             break;
-        case TRACK_OCTAVE:
+        case TrackOctave:
             strcpy((char *)buffer, "octave");
             break;
-        case TRACK_INSTRUMENT:
+        case TrackInstrument:
             strcpy((char *)buffer, "instrument");
             break;
-        case TRACK_VOLUME:
+        case TrackVolume:
             strcpy((char *)buffer, "volume");
             break;
-        case TRACK_NOTE:
+        case TrackFadeInOrOut:
+            strcpy((char *)buffer, "fade in/out");
+            break;
+        case TrackNote:
             strcpy((char *)buffer, "note");
             break;
-        case TRACK_WAIT:
+        case TrackWait:
             strcpy((char *)buffer, "wait");
             break;
-        case TRACK_NOTE_WAIT:
-            strcpy((char *)buffer, "note+wait");
-            break;
-        case TRACK_FADE_IN:
-            strcpy((char *)buffer, "fade in");
-            break;
-        case TRACK_FADE_OUT:
-            strcpy((char *)buffer, "fade out");
-            break;
-        case TRACK_INERTIA:
+        case TrackInertia:
             strcpy((char *)buffer, "inertia");
             break;
-        case TRACK_VIBRATO:
+        case TrackVibrato:
             strcpy((char *)buffer, "vibrato");
             break;
         case TRACK_TRANSPOSE:
@@ -142,7 +136,7 @@ void editTrack_render_command(int j, int y)
         }
     }
     
-    if (cmd == TRACK_BREAK)
+    if (cmd == TrackBreak)
     {
         if (param == 0)
         {
@@ -163,7 +157,7 @@ void editTrack_render_command(int j, int y)
     else 
     switch (cmd)
     {
-        case TRACK_OCTAVE:
+        case TrackOctave:
             if (param < 7)
             {
                 cmd = 'O';
@@ -185,54 +179,88 @@ void editTrack_render_command(int j, int y)
                 param = '0' + (17-param)/2;
             }
             break;
-        case TRACK_INSTRUMENT:
+        case TrackInstrument:
             cmd = 'I';
             param = hex_character[param];
             break;
-        case TRACK_VOLUME:
+        case TrackVolume:
             cmd = 'V';
             param = hex_character[param];
             break;
-        case TRACK_NOTE:
+        case TrackFadeInOrOut:
+            if (param > 7)
+            {   // Fade out
+                cmd = '>'; 
+                param = hex_character[16 - param]
+            }
+            else
+            {   // Fade in
+                cmd = '<'; 
+                param = hex_character[param]
+            }
+            break;
+        case TrackNote:
             if (param >= 12)
                 color_choice[1] = RGB(150,150,255)|(65535<<16);
             param %= 12;
             cmd = note_name[param][0];
             param = note_name[param][1];
             break;
-        case TRACK_WAIT:
+        case TrackWait:
             cmd = 'W';
             if (param)
                 param = hex_character[param];
             else
                 param = 'g';
             break;
-        case TRACK_NOTE_WAIT:
-            cmd = 'N';
-            param = hex_character[param];
-            break;
-        case TRACK_FADE_IN:
-            cmd = '<';
-            param = hex_character[param];
-            break;
-        case TRACK_FADE_OUT:
-            cmd = '>';
-            if (param)
-                param = hex_character[param];
+        case TrackArpNote:
+            color_choice[1] = RGB(150,255,150)|(0<<16);
+            if (param >= 12)
+            {   switch (param)
+                {   case 12:
+                        // play the low note in the arpeggio
+                        cmd = 'w';
+                        param = '_';
+                        break;
+                    case 13:
+                        // play the high note in the arpeggio, not necessarily on the scale.
+                        cmd = 'w';
+                        param = 248; // upper bar
+                        break;
+                    case 14:
+                        // increment note in arpeggio scale
+                        cmd = 'w';
+                        param = '+';
+                        break;
+                    case 15:
+                        // decrement note in arpeggio scale
+                        cmd = 'w';
+                        param = '-';
+                        break;
+                }
+            }
             else
-                param = 'g';
+            {   cmd = note_name[param][0];
+                param = note_name[param][1];
+            }
             break;
-        case TRACK_INERTIA:
+        case TrackInertia:
             cmd = 'i';
             param = hex_character[param];
             break;
-        case TRACK_VIBRATO:
+        case TrackVibrato:
             cmd = '~';
             param = hex_character[param];
             break;
-        case TRACK_TRANSPOSE:
-            cmd = 'T';
-            param = hex_character[param];
+        case TrackBend:
+            if (param < 8)
+            {   cmd = 11; // bend up
+                param = hex_character[param];
+            }
+            else
+            {   cmd = 12; // bend down
+                param = hex_character[16-param];
+            }
             break;
         case TRACK_SPEED:
             cmd = 'S'; 
@@ -294,9 +322,9 @@ void editTrack_render_command(int j, int y)
     if (cmd_index)
     switch (chip_track[editTrack_track][editTrack_player][cmd_index-1]&15)
     {
-        case TRACK_BREAK:
-        case TRACK_WAIT:
-        case TRACK_NOTE_WAIT:
+        case TrackBreak:
+        case TrackWait:
+        case TrackArpNote:
             --cmd_index;
     }
     if (j == cmd_index)
@@ -387,13 +415,13 @@ int _check_editTrack()
                     }
                     j = j_next_jump;
                     break;
-                case TRACK_WAIT:
-                case TRACK_NOTE_WAIT:
+                case TrackWait:
+                case TrackArpNote:
                     message("saw wait at j=%d\n", j);
                     found_wait = 1;
                     ++j;
                     break;
-                case TRACK_BREAK:
+                case TrackBreak:
                     // check for a randomizer behind
                     if (j > 0 && (chip_track[editTrack_track][editTrack_player][j-1]&15) == TRACK_RANDOMIZE)
                     {}
@@ -422,7 +450,7 @@ int _check_editTrack()
                 else
                     found_wait = 0;
                 break;
-            case TRACK_BREAK:
+            case TrackBreak:
                 // check for a randomizer behind
                 if (j > 0 && (chip_track[editTrack_track][editTrack_player][j-1]&15) == TRACK_RANDOMIZE)
                 {}
@@ -493,37 +521,40 @@ void editTrack_line()
         case 3:
             switch (chip_track[editTrack_track][editTrack_player][editTrack_pos]&15)
             {
-                case TRACK_BREAK:
+                case TrackBreak:
                     strcpy((char *)buffer, "break until time");
                     break;
-                case TRACK_OCTAVE:
+                case TrackOctave:
                     strcpy((char *)buffer, "octave");
                     break;
-                case TRACK_INSTRUMENT:
+                case TrackInstrument:
                     strcpy((char *)buffer, "instrument");
                     break;
-                case TRACK_VOLUME:
+                case TrackVolume:
                     strcpy((char *)buffer, "volume");
                     break;
-                case TRACK_NOTE:
+                case TrackFadeInOrOut:
+                    strcpy((char *)buffer, "fade in or out");
+                    break;
+                case TrackNote:
                     strcpy((char *)buffer, "relative note from C");
                     break;
-                case TRACK_WAIT:
+                case TrackWait:
                     strcpy((char *)buffer, "wait");
                     break;
-                case TRACK_NOTE_WAIT:
-                    strcpy((char *)buffer, "delta note, then wait");
+                case TrackArpLowNote:
+                    strcpy((char *)buffer, "arpeggio bass note");
                     break;
-                case TRACK_FADE_IN:
-                    strcpy((char *)buffer, "fade in");
+                case TrackArpScale:
+                    strcpy((char *)buffer, "arpeggio scale");
                     break;
                 case TRACK_FADE_OUT:
                     strcpy((char *)buffer, "fade out");
                     break;
-                case TRACK_INERTIA:
+                case TrackInertia:
                     strcpy((char *)buffer, "note inertia");
                     break;
-                case TRACK_VIBRATO:
+                case TrackVibrato:
                     strcpy((char *)buffer, "vibrato rate, depth");
                     break;
                 case TRACK_TRANSPOSE:
@@ -546,10 +577,11 @@ void editTrack_line()
             goto maybe_show_track;
         case 4:
             switch (chip_track[editTrack_track][editTrack_player][editTrack_pos]&15)
-            {
-                case TRACK_VIBRATO:
-                {
-                    uint8_t msg[16];
+            {   case TrackSpecial:
+                    // TODO: add TrackSpecial help box based on param
+                    break;
+                case TrackVibrato:
+                {   uint8_t msg[16];
                     switch ((chip_track[editTrack_track][editTrack_player][editTrack_pos]/16)/4) // rate
                     {
                         case 0:
@@ -570,12 +602,11 @@ void editTrack_line()
                     font_render_line_doubled(msg, 156, internal_line, 65535, BG_COLOR*257);
                     break;
                 }
-                case TRACK_NOTE_WAIT:
-                {
-                    uint8_t msg[16];
-                    switch ((chip_track[editTrack_track][editTrack_player][editTrack_pos]/16)/4) // note
-                    {
-                        case 0:
+                case TrackArpNote:
+                {   uint8_t msg[16];
+                    uint8_t param = chip_track[editTrack_track][editTrack_player][editTrack_pos] >> 4;
+                    switch (param)
+                    {   case 12:
                             strcpy((char *)msg, "same, wait ");
                             break;
                         case 1:
@@ -853,7 +884,7 @@ void editTrack_controls()
             {
                 editTrack_pos = 0;
                 while (editTrack_pos < MAX_TRACK_LENGTH-1 && 
-                    chip_track[editTrack_track][editTrack_player][editTrack_pos] != TRACK_BREAK)
+                    chip_track[editTrack_track][editTrack_player][editTrack_pos] != TrackBreak)
                 {
                     ++editTrack_pos;
                 }
@@ -887,7 +918,7 @@ void editTrack_controls()
                 if ((chip_track[editTrack_track][editTrack_player][j] = chip_track[editTrack_track][editTrack_player][j+1]) == 0)
                     break;
             }
-            chip_track[editTrack_track][editTrack_player][MAX_TRACK_LENGTH-1] = TRACK_BREAK;
+            chip_track[editTrack_track][editTrack_player][MAX_TRACK_LENGTH-1] = TrackBreak;
             check_editTrack();
             return;
         }
@@ -895,7 +926,7 @@ void editTrack_controls()
         if (GAMEPAD_PRESS(0, Y))
         {
             // insert
-            if ((chip_track[editTrack_track][editTrack_player][MAX_TRACK_LENGTH-1]&15) != TRACK_BREAK)
+            if ((chip_track[editTrack_track][editTrack_player][MAX_TRACK_LENGTH-1]&15) != TrackBreak)
                 return game_set_message_with_timeout("list full, can't insert.", MESSAGE_TIMEOUT);
             for (int j=MAX_TRACK_LENGTH-1; j>editTrack_pos; --j)
             {

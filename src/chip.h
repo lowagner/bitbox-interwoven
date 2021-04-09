@@ -135,17 +135,21 @@ typedef enum
     // Also counts as ArpHighNote:
     TrackNote = 5,
     TrackWait = 6,
-    TrackArpLowNote = 7,
+    TrackArpNote = 7,
     TrackArpScale = 8,
-    TrackVibrato = 9, // Frequency oscillation
-    TrackInertia = 10,
+    TrackInertia = 9,
+    TrackVibrato = 10, // Frequency oscillation
     TrackBend = 11,
     TrackStatic = 12,
     // TODO: Execute next command if some condition holds, otherwise following.
     // Argument provides the condition.
     // TODO: show entire track, since jumps can go anywhere??
-    // 0 - Use TrackArpLowNote for Arpeggio scale
-    // 1 - Use TrackNote as foundation for Arpeggio scale ??
+    // 0 - Use a wait of 1 for Arpeggio notes
+    // 1 - Use a wait of 2 for Arpeggio notes
+    // 2 - Use a wait of 3 for Arpeggio notes
+    // 3 - Use a wait of 4 for Arpeggio notes
+    // e - Use ArpNote as foundation for Arpeggio scale ??
+    // f - Use TrackNote as foundation for Arpeggio scale ??
     TrackSpecial = 13,
     TrackRandomize = 14,
     TrackJump = 15,
@@ -227,10 +231,18 @@ struct chip_player
     uint8_t instrument;
     uint8_t max_drum_index;
     
-    uint8_t note; // actual note being played    
-    uint8_t track_note; // includes song_transpose
+    uint8_t note; // actual note being played
+    // Current note played on the track, if not in an arpeggio.
+    // DOES NOT include song_transpose, that's added later.
+    // Acts as the ceiling for an arpeggio.
+    uint8_t track_note;
     uint8_t octave;
     uint8_t dutyd;
+
+    uint8_t track_arp_low_note;
+    uint8_t track_arp_current_note;
+    uint8_t track_arp_scale;
+    uint8_t track_arp_wait;
 
     uint8_t volume;
     int8_t volumed; 
@@ -292,26 +304,6 @@ void chip_play_track(int track);
 
 // play a note of this instrument now - useful for SFX !
 void chip_play_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t track_volume);
-
-// TODO: use an enum instead, e.g. TrackCommandType, e.g. with TrackBreak
-#define TRACK_BREAK 0
-#define TRACK_OCTAVE 1
-#define TRACK_INSTRUMENT 2
-#define TRACK_VOLUME 3
-#define TRACK_NOTE 4
-#define TRACK_WAIT 5
-// Maybe remove this and do something cooler, e.g. arpeggio
-#define TRACK_NOTE_WAIT 6
-// TODO: combine FADE_IN and OUT
-#define TRACK_FADE_IN 7
-#define TRACK_FADE_OUT 8
-#define TRACK_INERTIA 9
-#define TRACK_VIBRATO 10
-#define TRACK_TRANSPOSE 11
-#define TRACK_SPEED 12
-#define TRACK_LENGTH 13
-#define TRACK_RANDOMIZE 14
-#define TRACK_JUMP 15
 
 // TODO: preface with chip_ 
 uint8_t instrument_max_index(uint8_t i, uint8_t j);
