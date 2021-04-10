@@ -33,7 +33,7 @@ struct instrument instrument[16] CCM_MEMORY;
 
 // a track corresponds to a single melody or single harmony, which has instructions on which instruments to play.
 uint8_t track_length CCM_MEMORY;
-uint8_t chip_track[16][CHIP_PLAYERS][MAX_TRACK_LENGTH] CCM_MEMORY;
+uint8_t chip_track[MAX_TRACKS][CHIP_PLAYERS][MAX_TRACK_LENGTH] CCM_MEMORY;
 // Current absolute position since starting to play the track; shared between all players,
 // even if their current track command index is different (e.g. due to jumps).
 uint8_t track_pos CCM_MEMORY;
@@ -149,7 +149,7 @@ int track_jump_bad(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j)
                 j = 2*(chip_track[t][i][j]>>4);
                 break;
             case TrackWait:
-            case TRACK_NOTE_WAIT:
+            case TrackArpNote:
                 // We found a wait, this jump is ok.
                 return 0;
             case TrackBreak:
@@ -543,9 +543,9 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                     break;
             }
             else
-            {   uint8_t note = param + chip_player[i].octave * 12
+            {   uint8_t note = param + chip_player[i].octave * 12;
                 chip_player[i].track_arp_low_note = note;
-                chip_player[i].track_arp_current_note = chip_player[i].track_arp_low_note;
+                chip_player[i].track_arp_current_note = note;
             }
             chip_play_note_internal(i, chip_player[i].track_arp_current_note);
             chip_player[i].track_wait = chip_player[i].track_arp_wait;
