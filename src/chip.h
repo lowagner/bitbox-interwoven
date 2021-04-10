@@ -158,47 +158,50 @@ typedef enum
     // Nothing 16 or above is allowed
 } track_cmd_t;
 
-// TODO: switch to song commands for a section
-// TODO: make song a list of up to 32 sections, allow for 16 sections with 32 commands each
+// TODO: make song a list of song cmds, up to 128 commands long
 typedef enum
-{   // Parameter indicates how long to wait before repeating.
+{   // Parameter indicates how long we should wait before restarting song.  0 = immediately
     SongBreak = 0,
-    SongSpeed = 1,
-    SongTranspose = 2,
-    SongVolume = 3,
-    SongFadeInOrOut = 4,
+    SongVolume = 1,
+    SongFadeInOrOut = 2,
     // 1,2,4,8 -> players 1-4, bitwise OR'd.  15 and 0 mean all players.
-    SongChoosePlayers = 5,
-    // After every time a track-length ends, the "current" track is set to the "next" track,
-    // and the "next" track is set to MAX_TRACKS if "next" should not be repeated, otherwise it is kept.
-    // When we set the track based on this command, we update the "current" and "next" tracks for the players
-    // based on the TrackSetter behavior in SongSpecial.
-    SongSetTrackForChosenPlayers = 6,
+    SongChoosePlayers = 3,
+    // After every time a track-length ends, the "current" track is set to the "next" track.
+    // When we set the track based on this command, we update the "current" track to the parameter,
+    // and set the "next" track to "no track", which means the track will only play once.
+    SongSetLowTrackForChosenPlayers = 4,
+    SongSetHighTrackForChosenPlayers = 5,
+    // Like "setting" the track, but also having it repeat the next time, i.e.,
+    // both "current" and "next" get set to the parameter.
+    SongRepeatLowTrackForChosenPlayers = 6,
+    SongRepeatHighTrackForChosenPlayers = 7,
     // multiply by 4 to get number of beats we will play tracks for.
     // 0 maps to 16 which becomes 64.  Previously track length.
-    SongPlayTracksForCount = 7,
-    // TODO: see if we want to do other effects:
-    SongTODO = 8,
-    SongSquarify = 9,
-    SongStatic = 10,
-    SongSetVariableA = 11,
-    SongSetVariableB = 12,
-    // 0 - Set TrackSetterBehavior to "Low" tracks (0-15) (default)
-    // 1 - Set TrackSetterBehavior to "High" tracks (16-31)
-    // 2 - Set TrackSetterBehavior to repeat the tracks it sets indefinitely (default)
-    // 3 - Set TrackSetterBehavior to play the tracks it sets once
-    // 4 - If A == 0, execute next command, otherwise following
-    // 5 - If A > 0, execute next command, otherwise following
-    // 6 - If Variable A is equal to Variable B, execute next command
-    // 7 - If Variable A is less than Variable B, execute next command
-    // 8 - A = (A + B) % 16
-    // 9 - A = (A * B) % 16
-    // a - A = A % B            if B = 0, set A = 0
-    // b - A = A / B            if B = 0, set A = 15
-    // c - Increment Variable A without going over 15 (i.e., if A < 15, ++A)
-    // d - Decrement Variable A without wraparound.  (i.e. if A, --A)
-    // e - Swap Variable A and B
-    // f = SetNextCommandParameterToVariableA
+    SongPlayTracksForCount = 8,
+    SongSpeed = 9,
+    SongTranspose = 10,
+    // TODO: see if this makes sense as an effect, otherwise do something else:
+    SongSquarify = 11,
+    SongSetVariableA = 12,
+    // NOTE: params here CANNOT BE RANDOMIZED since this breaks being able to test conditionals for bad jumps
+    // 0 - If A == 0, execute next command, otherwise following
+    // 1 - If A > 0, execute next command, otherwise following
+    // 2 - If A < B, execute next command, otherwise following
+    // 3 - If A == B, execute next command, otherwise following
+    // END NOTE ABOUT NOT BEING RANDOMIZED
+    // 4 = SetNextCommandParameterToVariableA
+    // 5 - B = A, i.e. Copy Variable A into Variable B
+    // 6 - Swap Variable A and Variable B
+    // 7 - A = (A % B)      if B = 0, then A = 0
+    // 8 - A = (A / B)      if B = 0, then A = 15
+    // 9 - A = (A + B) & 15
+    // a - A = (A - B) & 15
+    // TODO: maybe different operations here:
+    // b - A = (A / 2)
+    // c - A = (A + 1) & 15, i.e., increment with wraparound
+    // d - A = (A - 1) & 15, i.e., decrement with wraparound
+    // e - Increment Variable A without going over 15 (i.e., if A < 15, ++A)
+    // f - Decrement Variable A without wraparound.  (i.e. if A, --A)
     SongSpecial = 13,
     SongRandomize = 14,
     SongJump = 15,
