@@ -11,7 +11,9 @@
 #define MAX_INSTRUMENT_LENGTH 16
 #define DRUM_SECTION_LENGTH (MAX_INSTRUMENT_LENGTH/4)
 #define MAX_SONG_LENGTH 60
-#define MAX_TRACK_LENGTH 64
+// User can set a "High" track (16-31) or a "Low" track (0-15) for each player.
+#define MAX_TRACKS 32
+#define MAX_TRACK_LENGTH 32
 #define MAX_NOTE 84
 #define CHIP_PLAYERS 4
 
@@ -166,30 +168,36 @@ typedef enum
     SongFadeInOrOut = 4,
     // 1,2,4,8 -> players 1-4, bitwise OR'd.  15 and 0 mean all players.
     SongChoosePlayers = 5,
-    SongSetTrackForPlayers = 6,
-    SongRepeatJustSetTrack = 7,
-    SongPlayTracks = 8, // Essentially track length
+    // After every time a track-length ends, the "current" track is set to the "next" track,
+    // and the "next" track is set to MAX_TRACKS if "next" should not be repeated, otherwise it is kept.
+    // When we set the track based on this command, we update the "current" and "next" tracks for the players
+    // based on the TrackSetter behavior in SongSpecial.
+    SongSetTrackForChosenPlayers = 6,
+    // multiply by 4 to get number of beats we will play tracks for.
+    // 0 maps to 16 which becomes 64.  Previously track length.
+    SongPlayTracksForCount = 7,
     // TODO: see if we want to do other effects:
+    SongTODO = 8,
     SongSquarify = 9,
     SongStatic = 10,
     SongSetVariableA = 11,
     SongSetVariableB = 12,
-    // 0 - do e then 2
-    // 1 - do f then 3
-    // 2 - If A > 0, execute next command, otherwise following
-    // 3 - If B > 0, execute next command, otherwise following
+    // 0 - Set TrackSetterBehavior to "Low" tracks (0-15) (default)
+    // 1 - Set TrackSetterBehavior to "High" tracks (16-31)
+    // 2 - Set TrackSetterBehavior to repeat the tracks it sets indefinitely (default)
+    // 3 - Set TrackSetterBehavior to play the tracks it sets once
     // 4 - If A == 0, execute next command, otherwise following
-    // 5 - If B == 0, execute next command, otherwise following.
-    // 6 - If Variable A is less than Variable B, execute next command
-    // 7 - If Variable A is equal to Variable B, execute next command
-    // 8 - If Variable A is greater than Variable B, execute next command
-    // 9 - Swap Variable A and B
-    // a - A = A + B, i.e. Add Variable B to Variable A
-    // b - A = A * B
-    // c - A = A % B
-    // d - A = A / B
-    // e - Decrement Variable A without wraparound.  (i.e. if A, --A)
-    // f - Decrement Variable B without wraparound.  (i.e. if B, --B)
+    // 5 - If A > 0, execute next command, otherwise following
+    // 6 - If Variable A is equal to Variable B, execute next command
+    // 7 - If Variable A is less than Variable B, execute next command
+    // 8 - A = (A + B) % 16
+    // 9 - A = (A * B) % 16
+    // a - A = A % B            if B = 0, set A = 0
+    // b - A = A / B            if B = 0, set A = 15
+    // c - Increment Variable A without going over 15 (i.e., if A < 15, ++A)
+    // d - Decrement Variable A without wraparound.  (i.e. if A, --A)
+    // e - Swap Variable A and B
+    // f = SetNextCommandParameterToVariableA
     SongSpecial = 13,
     SongRandomize = 14,
     SongJump = 15,
@@ -222,7 +230,7 @@ struct instrument
 // TODO: preface with chip_
 extern struct instrument instrument[16];
 
-extern uint8_t chip_track[16][CHIP_PLAYERS][MAX_TRACK_LENGTH];
+extern uint8_t chip_track[MAX_TRACKS][CHIP_PLAYERS][MAX_TRACK_LENGTH];
 
 struct chip_player 
 {
