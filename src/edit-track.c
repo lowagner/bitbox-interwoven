@@ -142,7 +142,7 @@ void editTrack_render_command(int j, int y)
         {
             if (y == 7)
             {
-                if (j == 0 || (chip_track[editTrack_track][editTrack_player][j-1]&15) != TRACK_RANDOMIZE)
+                if (j == 0 || (chip_track[editTrack_track][editTrack_player][j-1]&15) != TrackRandomize)
                     editTrack_show_track = 0;
             }
             cmd = '0';
@@ -273,7 +273,7 @@ void editTrack_render_command(int j, int y)
             else
                 param = 'g';
             break;
-        case TRACK_RANDOMIZE:
+        case TrackRandomize:
             cmd = 'R';
             param = 224 + param;
             break;
@@ -386,7 +386,7 @@ int _check_editTrack()
     int found_wait = 0;
     for (int k=0; k<64; ++k)
     {
-        if (j >= 32) // got to the end
+        if (j >= MAX_TRACK_LENGTH) // got to the end
             return 0;
         if (j_last_jump >= 0)
         {
@@ -423,7 +423,7 @@ int _check_editTrack()
                     break;
                 case TrackBreak:
                     // check for a randomizer behind
-                    if (j > 0 && (chip_track[editTrack_track][editTrack_player][j-1]&15) == TRACK_RANDOMIZE)
+                    if (j > 0 && (chip_track[editTrack_track][editTrack_player][j-1]&15) == TrackRandomize)
                     {}
                     else if ((chip_track[editTrack_track][editTrack_player][j]>>4) == 0)
                         return 0;
@@ -452,7 +452,7 @@ int _check_editTrack()
                 break;
             case TrackBreak:
                 // check for a randomizer behind
-                if (j > 0 && (chip_track[editTrack_track][editTrack_player][j-1]&15) == TRACK_RANDOMIZE)
+                if (j > 0 && (chip_track[editTrack_track][editTrack_player][j-1]&15) == TrackRandomize)
                 {}
                 else if ((chip_track[editTrack_track][editTrack_player][j]>>4) == 0)
                     return 0;
@@ -566,7 +566,7 @@ void editTrack_line()
                 case TRACK_LENGTH:
                     strcpy((char *)buffer, "track length / 4");
                     break;
-                case TRACK_RANDOMIZE:
+                case TrackRandomize:
                     strcpy((char *)buffer, "randomize next cmd");
                     break;
                 case TRACK_JUMP:
@@ -667,7 +667,7 @@ void editTrack_line()
         case 11:
             if (music_editor_in_menu)
             {
-                if (editTrack_copying < 64)
+                if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
                     font_render_line_doubled((uint8_t *)"A:cancel copy", 96, internal_line, 65535, BG_COLOR*257);
                 else
                     font_render_line_doubled((uint8_t *)"A:save to file", 96, internal_line, 65535, BG_COLOR*257);
@@ -680,7 +680,7 @@ void editTrack_line()
         case 12:
             if (music_editor_in_menu)
             {
-                if (editTrack_copying < 64)
+                if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
                     font_render_line_doubled((uint8_t *)"B/X:\"     \"", 96, internal_line, 65535, BG_COLOR*257);
 
                 else
@@ -692,7 +692,7 @@ void editTrack_line()
         case 13:
             if (music_editor_in_menu)
             {
-                if (editTrack_copying < 64)
+                if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
                     font_render_line_doubled((uint8_t *)"Y:paste", 96, internal_line, 65535, BG_COLOR*257);
 
                 else
@@ -706,7 +706,7 @@ void editTrack_line()
         case 14:
             if (music_editor_in_menu)
             {
-                if (editTrack_copying < 64)
+                if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
                     goto maybe_show_track;
                 strcpy((char *)buffer, "Y:file ");
                 strcpy((char *)(buffer+7), (char *)base_song_filename);
@@ -743,8 +743,7 @@ void editTrack_line()
 void editTrack_controls()
 {
     if (music_editor_in_menu)
-    {
-        int switched = 0;
+    {   int switched = 0;
         if (GAMEPAD_PRESSING(0, down))
             ++switched;
         if (GAMEPAD_PRESSING(0, up))
@@ -770,7 +769,9 @@ void editTrack_controls()
         if (switched)
         {
             game_message[0] = 0;
-            editTrack_track = (editTrack_track+switched)&15;
+            // Need a power of two for MAX_TRACKS:
+            ASSERT(((MAX_TRACKS - 1)&MAX_TRACKS) == 0);
+            editTrack_track = (editTrack_track+switched)&(MAX_TRACKS - 1);
             editTrack_pos = 0;
             editTrack_offset = 0;
             gamepad_press_wait = GAMEPAD_PRESS_WAIT;
@@ -778,36 +779,36 @@ void editTrack_controls()
         }
 
         if (GAMEPAD_PRESS(0, X)) // copy
-        {
-            if (editTrack_copying < 64)
+        {   ASSERT(CHIP_PLAYERS * MAX_TRACKS < 256);
+            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
             {
-                editTrack_copying = 64;
+                editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
                 game_message[0] = 0;
             }
             else
             {
-                editTrack_copying = 4*editTrack_track + editTrack_player;
+                editTrack_copying = CHIP_PLAYERS*editTrack_track + editTrack_player;
                 game_set_message_with_timeout("copied.", MESSAGE_TIMEOUT);
             }
         }
 
         if (GAMEPAD_PRESS(0, Y)) // paste
         {
-            if (editTrack_copying < 64)
+            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
             {
                 // paste
                 uint8_t *src, *dst;
-                src = &chip_track[editTrack_copying/4][editTrack_copying%4][0];
+                src = &chip_track[editTrack_copying/4][editTrack_copying%CHIP_PLAYERS][0];
                 dst = &chip_track[editTrack_track][editTrack_player][0];
                 if (src == dst)
                 {
-                    editTrack_copying = 64;
+                    editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
                     game_set_message_with_timeout("pasting to same thing", MESSAGE_TIMEOUT);
                     return;
                 }
                 memcpy(dst, src, sizeof(chip_track[0][0]));
                 game_set_message_with_timeout("pasted.", MESSAGE_TIMEOUT);
-                editTrack_copying = 64;
+                editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
             }
             else
             {
@@ -825,10 +826,10 @@ void editTrack_controls()
             save_or_load = 2; // load
         if (save_or_load)
         {
-            if (editTrack_copying < 64)
+            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
             {
                 // cancel a copy 
-                editTrack_copying = 64;
+                editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
                 game_message[0] = 0;
                 return;
             }
@@ -841,10 +842,9 @@ void editTrack_controls()
             io_message_from_error(game_message, error, save_or_load);
             return;
         }
-
     }
-    else // editing, not menu
-    {
+    else
+    {   // editing, not menu
         int movement = 0;
         if (GAMEPAD_PRESSING(0, L))
             --movement;
@@ -975,7 +975,7 @@ void editTrack_controls()
     {
         game_message[0] = 0;
         music_editor_in_menu = 1 - music_editor_in_menu; 
-        editTrack_copying = 64;
+        editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
         chip_kill();
         return;
     }
@@ -985,7 +985,7 @@ void editTrack_controls()
 
     if (GAMEPAD_PRESS(0, select))
     {   // Switch to editing instrument, cancel any copy.
-        editTrack_copying = 64;
+        editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
         game_message[0] = 0;
         game_switch(ModeEditInstrument);
     } 

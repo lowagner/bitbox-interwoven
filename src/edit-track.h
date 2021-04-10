@@ -5,7 +5,6 @@
 
 extern uint8_t editTrack_track;
 extern uint8_t editTrack_player;
-void render_command(uint8_t value, int x, int y);
 
 void editTrack_init();
 void editTrack_load_defaults();

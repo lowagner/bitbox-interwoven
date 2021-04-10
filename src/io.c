@@ -18,17 +18,17 @@
 #define SONG_BYTE_LENGTH (1 /* length of song */ + sizeof(chip_song))
 #define TOTAL_FILE_SIZE (SONG_BYTE_OFFSET + SONG_BYTE_LENGTH)
 
-#define SAVE_INDEXED(name, i) \
+#define SAVE_INDEXED(name, i, max) \
     io_error_t ferr = io_save_recent_song_filename(); \
     if (ferr) \
         return ferr; \
-    message("opening %s to load " #name " %d / 16 with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE); \
+    message("opening %s to load " #name " %d / " #max " with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE); \
     ferr = io_open_or_zero_file(full_song_filename, TOTAL_FILE_SIZE); \
     if (ferr) \
         return ferr; \
-    if (i >= 16) \
+    if (i >= max) \
     {   f_lseek(&fat_file, name##_BYTE_OFFSET); \
-        for (i=0; i<16; ++i) \
+        for (i=0; i<max; ++i) \
           if ((ferr = _io_save_##name(i))) \
             break; \
     } \
@@ -40,17 +40,17 @@
     message("done loading " #name "\n"); \
     return ferr
 
-#define LOAD_INDEXED(name, i) \
+#define LOAD_INDEXED(name, i, max) \
     io_error_t ferr = io_save_recent_song_filename(); \
     if (ferr) \
         return ferr; \
-    message("opening %s to load " #name " %d / 16 with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE); \
+    message("opening %s to load " #name " %d / " #max " with stride %d\n", full_song_filename, i, name##_BYTE_STRIDE); \
     fat_result = f_open(&fat_file, (char *)full_song_filename, FA_READ | FA_OPEN_EXISTING); \
     if (fat_result != FR_OK) \
         return IoOpenError; \
-    if (i >= 16) \
+    if (i >= max) \
     {   f_lseek(&fat_file, name##_BYTE_OFFSET); \
-        for (i=0; i<16; ++i) \
+        for (i=0; i<max; ++i) \
           if ((ferr = _io_load_##name(i))) \
             break; \
     } \
@@ -309,12 +309,12 @@ static io_error_t _io_save_INSTRUMENTS(unsigned int i)
 
 io_error_t io_load_instrument(unsigned int i)
 {   // Loads an instrument (or multiple if i >= 16).
-    LOAD_INDEXED(INSTRUMENTS, i);
+    LOAD_INDEXED(INSTRUMENTS, i, 16);
 }
 
 io_error_t io_save_instrument(unsigned int i)
 {   // Saves an instrument (or multiple if i >= 16).
-    SAVE_INDEXED(INSTRUMENTS, i);
+    SAVE_INDEXED(INSTRUMENTS, i, 16);
 }
 
 io_error_t _io_load_TRACKS(unsigned int i)
@@ -342,12 +342,12 @@ io_error_t _io_save_TRACKS(unsigned int i)
 
 io_error_t io_load_track(unsigned int i)
 {   // Loads a track (or multiple if i >= 16).
-    LOAD_INDEXED(TRACKS, i);
+    LOAD_INDEXED(TRACKS, i, MAX_TRACKS);
 }
 
 io_error_t io_save_track(unsigned int i)
-{   // Saves a track (or multiple if i >= 16).
-    SAVE_INDEXED(TRACKS, i);
+{   // Saves a track (or multiple if i >= MAX_TRACKS).
+    SAVE_INDEXED(TRACKS, i, MAX_TRACKS);
 }
 
 io_error_t io_load_song()
