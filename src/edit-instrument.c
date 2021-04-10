@@ -855,7 +855,7 @@ void editInstrument_line()
                     strcpy((char *)buffer, "vibrato rate, depth");
                     break;
                 case InstrumentBend:
-                    strcpy((char *)buffer, "bend");
+                    strcpy((char *)buffer, "pitch bend");
                     break;
                 case InstrumentStatic:
                     // TODO:

@@ -145,7 +145,7 @@ int track_jump_bad(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j)
             return 1;
         switch (chip_track[t][i][j]&15)
         {   // Update track position j based on command:
-            case TRACK_JUMP:
+            case TrackJump:
                 j = 2*(chip_track[t][i][j]>>4);
                 break;
             case TrackWait:
@@ -496,6 +496,18 @@ static void track_run_command(uint8_t i, uint8_t cmd)
         case TrackVolume: // v = volume
             chip_player[i].track_volume = param*17;
             break;
+        case TrackFadeInOrOut:
+            // TODO: double check
+            if (param > 7)
+            {   // fade out
+                param = 16 - param;
+                chip_player[i].track_volumed = -param - param*param/15;
+            }
+            else
+            {   // fade in
+                chip_player[i].track_volumed = param + param*param/15;
+            }
+            break;
         case TrackNote: // 
             chip_play_note_internal(i, param);
             break;
@@ -568,14 +580,6 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             }
             break;
         }
-        case TRACK_FADE_IN: // < = fade in, or crescendo
-            chip_player[i].track_volumed = param + param*param/15;
-            break;
-        case TRACK_FADE_OUT: // > = fade out, or decrescendo
-            if (!param)
-                param = 16;
-            chip_player[i].track_volumed = -param - param*param/15;
-            break;
         case TrackVibrato: // ~ = vibrato depth
             chip_player[i].track_vibrato_depth = (param&3)*3 + (param>3)*2;
             chip_player[i].track_vibrato_rate = 1 + (param & 12)/2;
@@ -583,34 +587,30 @@ static void track_run_command(uint8_t i, uint8_t cmd)
         case TrackInertia: // i = inertia (auto note slides)
             chip_player[i].track_inertia = param;
             break;
-        case TRACK_TRANSPOSE: // T = global transpose
-            if (param == 0) // reset song transpose
-                song_transpose = 0;
-            else
-                song_transpose = (song_transpose+param)%12;
+        case TrackBend:
+            // TODO:
             break;
-        case TRACK_SPEED: // 
-            song_speed = 16 - param;
+        case TrackStatic:
+            // TODO:
             break;
-        case TRACK_LENGTH: // M - measure length, in quarter notes
-            param = param ? param : 16;
-            track_length = 4 * param;
+        case TrackSpecial:
+            // TODO:
             break;
-        case TRACK_RANDOMIZE:
+        case TrackRandomize:
         {
             uint8_t next_index = chip_player[i].track_cmd_index;
             if (next_index >= MAX_TRACK_LENGTH)
                 break;
             uint8_t random = randomize(param);
             uint8_t t = chip_player[i].track_index;
-            if ((chip_track[t][i][next_index]&15) == TRACK_JUMP && 
+            if ((chip_track[t][i][next_index]&15) == TrackJump && 
                 track_jump_bad(t, i, next_index, 2*random))
                 break;
             chip_track[t][i][next_index] = 
                 (chip_track[t][i][next_index]&15) | (random<<4);
             break;
         }
-        case TRACK_JUMP: // 
+        case TrackJump: // 
             chip_player[i].track_cmd_index = 2*param;
             break;
     }

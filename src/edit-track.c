@@ -70,19 +70,19 @@ void editTrack_short_command_message(uint8_t *buffer, uint8_t cmd)
         case TrackVibrato:
             strcpy((char *)buffer, "vibrato");
             break;
-        case TRACK_TRANSPOSE:
-            strcpy((char *)buffer, "transpose");
+        case TrackBend:
+            strcpy((char *)buffer, "bend");
             break;
-        case TRACK_SPEED:
-            strcpy((char *)buffer, "speed");
+        case TrackStatic:
+            strcpy((char *)buffer, "static");
             break;
-        case TRACK_LENGTH:
-            strcpy((char *)buffer, "track length");
+        case TrackSpecial:
+            strcpy((char *)buffer, "special");
             break;
         case TRACK_RANDOMIZE:
             strcpy((char *)buffer, "randomize");
             break;
-        case TRACK_JUMP:
+        case TrackJump:
             strcpy((char *)buffer, "jump");
             break;
     }
@@ -262,22 +262,20 @@ void editTrack_render_command(int j, int y)
                 param = hex_character[16-param];
             }
             break;
-        case TRACK_SPEED:
+        case TrackStatic:
             cmd = 'S'; 
             param = hex_character[param];
             break;
-        case TRACK_LENGTH:
-            cmd = 'L';
-            if (param)
-                param = hex_character[param];
-            else
-                param = 'g';
+        case TrackSpecial:
+            // TODO:
+            cmd = '?';
+            param = '?';
             break;
         case TrackRandomize:
             cmd = 'R';
             param = 224 + param;
             break;
-        case TRACK_JUMP:
+        case TrackJump:
             cmd = 'J';
             param = hex_character[2*param];
             break;
@@ -395,7 +393,7 @@ int _check_editTrack()
             int j_next_jump = -1;
             switch (chip_track[editTrack_track][editTrack_player][j]&15)
             {
-                case TRACK_JUMP:
+                case TrackJump:
                     j_next_jump = 2*(chip_track[editTrack_track][editTrack_player][j]>>4);
                     if (j_next_jump == j_last_jump) // jumping forward to the original jump
                     {
@@ -434,7 +432,7 @@ int _check_editTrack()
         }
         else switch (chip_track[editTrack_track][editTrack_player][j]&15)
         {
-            case TRACK_JUMP:
+            case TrackJump:
                 j_last_jump = j;
                 j = 2*(chip_track[editTrack_track][editTrack_player][j]>>4);
                 if (j > j_last_jump)
@@ -557,19 +555,19 @@ void editTrack_line()
                 case TrackVibrato:
                     strcpy((char *)buffer, "vibrato rate, depth");
                     break;
-                case TRACK_TRANSPOSE:
-                    strcpy((char *)buffer, "global song transpose");
+                case TrackBend:
+                    strcpy((char *)buffer, "track pitch bend");
                     break;
-                case TRACK_SPEED:
-                    strcpy((char *)buffer, "track speed");
+                case TrackStatic:
+                    strcpy((char *)buffer, "track static");
                     break;
-                case TRACK_LENGTH:
-                    strcpy((char *)buffer, "track length / 4");
+                case TrackSpecial:
+                    strcpy((char *)buffer, "track special");
                     break;
                 case TrackRandomize:
                     strcpy((char *)buffer, "randomize next cmd");
                     break;
-                case TRACK_JUMP:
+                case TrackJump:
                     strcpy((char *)buffer, "jump to cmd index");
                     break;
             }
