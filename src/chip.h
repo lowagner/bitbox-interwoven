@@ -158,7 +158,8 @@ typedef enum
     // Nothing 16 or above is allowed
 } track_cmd_t;
 
-// TODO: maybe switch to song commands
+// TODO: switch to song commands for a section
+// TODO: make song a list of up to 32 sections, allow for 16 sections with 32 commands each
 typedef enum
 {   // Parameter indicates how long to wait before repeating.
     SongBreak = 0,
