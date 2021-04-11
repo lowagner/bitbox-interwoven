@@ -48,7 +48,7 @@ typedef enum
     WfRed, // = "integral" of WfNoise, mixes with WfNoise when duty is not default
     WfViolet, // = "derivative" of WfNoise, mixes with WfNoise when duty is not default
     WfRedViolet, // waveform flips between Red and Violet based on phase/duty.
-} wf_t;
+} chip_wf_t;
 
 // TODO: double check our order is ok:
 typedef enum
@@ -69,13 +69,13 @@ typedef enum
     InstrumentRandomize = 14,
     InstrumentJump = 15,
     // Nothing 16 or above is allowed
-} inst_cmd_t;
+} chip_inst_cmd_t;
 
 typedef enum
 {   // Positive/negative enforcement for the fade magnitude.  i.e., can be a fade in or fade out.
     InstrumentFadeNegativeVolumeD = 0, // when user sets the magnitude, make it a fade out
     InstrumentFadePositiveVolumeD = 1, // when user sets the magnitude, make it a fade in
-} inst_fade_volumed_behavior_t;
+} chip_inst_fade_volumed_behavior_t;
 
 typedef enum
 {   // What happens when a fade reaches the limit (min volume or max volume)
@@ -87,7 +87,7 @@ typedef enum
     InstrumentFadeWrap = 5, // When reaching the max, return to min.  Or vice versa. 
     InstrumentFadeWrapLoweringVolume = 6, // When hitting a limit, decrease the max. 
     InstrumentFadeWrapRaisingVolume = 7, // When hitting a limit, increase the min 
-} inst_fade_behavior_type_t;
+} chip_inst_fade_behavior_type_t;
 
 typedef enum
 {   // Combined behavior_type and volumed_behavior:
@@ -125,7 +125,7 @@ typedef enum
             = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadeNegativeVolumeD,
     InstrumentFadeWrapRaisingVolumeWithPositiveVolumeD
             = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadePositiveVolumeD,
-} inst_fade_behavior_t;
+} chip_inst_fade_behavior_t;
 
 // TODO:
 typedef enum
@@ -138,6 +138,7 @@ typedef enum
     TrackNote = 5,
     TrackWait = 6,
     TrackArpNote = 7,
+    // See chip_scale_t for the different scales:
     TrackArpScale = 8,
     TrackInertia = 9,
     TrackVibrato = 10, // Frequency oscillation
@@ -156,7 +157,12 @@ typedef enum
     TrackRandomize = 14,
     TrackJump = 15,
     // Nothing 16 or above is allowed
-} track_cmd_t;
+} chip_track_cmd_t;
+
+typedef enum
+{   ScaleChromatic = 0,
+    // Nothing 16 or above is allowed
+} chip_scale_t;
 
 // TODO: make song a list of song cmds, up to 128 commands long
 typedef enum
