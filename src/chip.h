@@ -249,15 +249,16 @@ struct chip_player
     uint8_t max_drum_index;
     
     uint8_t note; // actual note being played
-    // Current note played on the track, if not in an arpeggio.
+    // Current note played on the track.
     // DOES NOT include song_transpose, that's added later.
-    // Acts as the ceiling for an arpeggio.
     uint8_t track_note;
     uint8_t octave;
     uint8_t dutyd;
 
+    // Acts as the floor and ceiling for an arpeggio
+    // arpeggio uses "track_note" as current note.
     uint8_t track_arp_low_note;
-    uint8_t track_arp_current_note;
+    uint8_t track_arp_high_note;
     uint8_t track_arp_scale;
     uint8_t track_arp_wait;
 

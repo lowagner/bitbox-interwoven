@@ -312,7 +312,7 @@ void chip_reset_player(int i)
     chip_player[i].instrument = i;
     chip_player[i].cmd_index = 0;
     chip_player[i].track_arp_low_note = 12;
-    chip_player[i].track_arp_current_note = 12;
+    chip_player[i].track_arp_high_note = 12;
     chip_player[i].track_arp_scale = 0;
     chip_player[i].track_arp_wait = 1;
     chip_player[i].track_cmd_index = 0;
@@ -389,8 +389,9 @@ void chip_play_track(int track)
 
 static void chip_play_note_internal(uint8_t p, uint8_t note)
 {   // For player p, plays a note, for internal use only.  see `chip_play_note` for externally allowed usage.
+    // Does not set the octave based on the current instrument, that must be part of `note`.
     #ifdef DEBUG_CHIPTUNE
-    message("note %d on player %d\n", (note+12*chip_player[p].octave), p);
+    message("note %d on player %d\n", note, p);
     #endif
     chip_player[p].instrument = chip_instrument_for_next_note_for_player[p];
     // now set some defaults and the command index
@@ -421,7 +422,7 @@ static void chip_play_note_internal(uint8_t p, uint8_t note)
         oscillator[p].waveform = WfTriangle; // by default
         chip_player[p].volume = 14*17; 
     }
-    chip_player[p].track_note = note + chip_player[p].octave*12;
+    chip_player[p].track_note = note;
     chip_player[p].volumed = 0;
     chip_player[p].fade_behavior = 0;
     chip_player[p].fade_saved_max_volume = 255;
@@ -441,7 +442,7 @@ void chip_play_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t volume)
 {   // for player `p`, using instrument `inst`, plays a note with some volume
     uint8_t old_instrument = chip_instrument_for_next_note_for_player[p];
     chip_instrument_for_next_note_for_player[p] = inst;
-    chip_play_note_internal(p, note);
+    chip_play_note_internal(p, note + 12 * chip_player[p].octave);
     chip_player[p].track_volume = volume;
     chip_player[p].track_volumed = 0;
     chip_instrument_for_next_note_for_player[p] = old_instrument;
@@ -508,8 +509,10 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                 chip_player[i].track_volumed = param + param*param/15;
             }
             break;
-        case TrackNote: // 
+        case TrackNote:
+            param += 12 * chip_player[i].octave;
             chip_play_note_internal(i, param);
+            chip_player[i].track_arp_high_note = param;
             break;
         case TrackWait: // w = wait 
             if (param)
@@ -518,66 +521,43 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                 chip_player[i].track_wait = 16;
             break;
         case TrackArpNote:
+        {   uint8_t note;
             // Plays a note in the scale (if param > 11) or sets the low note in the arpeggio and plays that.
             // In either case, we also set a following wait based on the track arpeggio wait.
             if (param > 11)
             switch (param)
             {   case 12:
-                    chip_player[i].track_arp_current_note = chip_player[i].track_arp_low_note;
+                    note = chip_player[i].track_arp_low_note;
                     break;
                 case 13:
                     // Technically this can be off the scale, but that can be fun:
-                    chip_player[i].track_arp_current_note = chip_player[i].track_note;
+                    note = chip_player[i].track_arp_high_note;
                     break;
                 case 14:
                     // increment arpeggio
+                    note = chip_player[i].track_note;
                     // TODO based on scale.
-                    if (++chip_player[i].track_arp_current_note > chip_player[i].track_note)
-                        chip_player[i].track_arp_current_note = chip_player[i].track_note;
+                    if (++note > chip_player[i].track_arp_high_note)
+                        note = chip_player[i].track_arp_high_note;
                     break;
                 case 15:
                     // decrement arpeggio
+                    note = chip_player[i].track_note;
                     // TODO based on scale:
-                    if (--chip_player[i].track_arp_current_note < chip_player[i].track_arp_low_note)
-                        chip_player[i].track_arp_current_note = chip_player[i].track_arp_low_note;
+                    if (--note < chip_player[i].track_arp_low_note)
+                        note = chip_player[i].track_arp_low_note;
                     break;
             }
             else
-            {   uint8_t note = param + chip_player[i].octave * 12;
+            {   note = param + 12 * chip_player[i].octave;
                 chip_player[i].track_arp_low_note = note;
-                chip_player[i].track_arp_current_note = note;
             }
-            chip_play_note_internal(i, chip_player[i].track_arp_current_note);
+            chip_play_note_internal(i, note);
             chip_player[i].track_wait = chip_player[i].track_arp_wait;
             break;
+        }
         case TrackArpScale:
-        {   // hit a note relative to previous, and wait based on parameter
-            // lower 2 bits indicate how long to wait:
-            chip_player[i].track_wait = (param&3)+1;
-            uint8_t old_note = chip_player[i].track_note;
-            chip_play_note_internal(i, old_note);
-            switch (param >> 2)
-            {   // upper 2 bits indicate which note to play
-                case 0:
-                    chip_player[i].track_note = old_note;
-                    break;
-                case 1:
-                    chip_player[i].track_note = old_note+1;
-                    if (chip_player[i].track_note >= MAX_NOTE)
-                        chip_player[i].track_note -= 12;
-                    break;
-                case 2:
-                    chip_player[i].track_note = old_note+2;
-                    if (chip_player[i].track_note >= MAX_NOTE)
-                        chip_player[i].track_note -= 12;
-                    break;
-                case 3:
-                    if (old_note)
-                        chip_player[i].track_note = old_note-1;
-                    else
-                        chip_player[i].track_note = old_note+11;
-                    break;
-            }
+        {   // TODO:
             break;
         }
         case TrackVibrato: // ~ = vibrato depth
