@@ -32,7 +32,7 @@ struct oscillator oscillator[CHIP_PLAYERS] CCM_MEMORY;
 struct instrument instrument[16] CCM_MEMORY;
 
 // a track corresponds to a single melody or single harmony, which has instructions on which instruments to play.
-uint8_t track_length CCM_MEMORY;
+uint8_t chip_track_length CCM_MEMORY;
 uint8_t chip_track[MAX_TRACKS][CHIP_PLAYERS][MAX_TRACK_LENGTH] CCM_MEMORY;
 // Current absolute position since starting to play the track; shared between all players,
 // even if their current track command index is different (e.g. due to jumps).
@@ -302,7 +302,7 @@ void chip_init()
 {   // initialize things (only happens once).
     chip_volume = 128;
     song_length = 16;
-    track_length = 32;
+    chip_track_length = 32;
     song_speed = 4;
 }
 
@@ -346,7 +346,7 @@ void chip_play_song(int pos)
 {   // Start playing a song from the provided position.
     if (pos == 0)
     {   // Reset to song defaults (let the tracks update as necessary):
-        track_length = 32;
+        chip_track_length = 32;
         song_speed = 4;
         song_transpose = 0;
     }
@@ -638,7 +638,7 @@ static inline void chip_update_players_for_track()
     message("\n");
     #endif
 
-    if (++track_pos == track_length)
+    if (++track_pos == chip_track_length)
     {
         for (int i=0; i<CHIP_PLAYERS; ++i)
         {

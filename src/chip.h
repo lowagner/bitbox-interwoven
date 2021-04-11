@@ -127,7 +127,6 @@ typedef enum
             = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadePositiveVolumeD,
 } chip_inst_fade_behavior_t;
 
-// TODO:
 typedef enum
 {   TrackBreak = 0,
     TrackOctave = 1,
@@ -304,7 +303,7 @@ extern uint16_t chip_song[MAX_SONG_LENGTH];
 // TODO: preface with chip_ and probably change pos to position or abs_position
 extern uint8_t track_pos;
 // TODO: preface with chip_
-extern uint8_t track_length;
+extern uint8_t chip_track_length;
 
 // TODO: preface with chip_
 extern uint8_t song_transpose;

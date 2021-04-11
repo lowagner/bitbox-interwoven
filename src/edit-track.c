@@ -26,6 +26,15 @@ uint8_t editTrack_player;
 uint8_t editTrack_command_copy;
 uint8_t editTrack_bad;
 
+enum
+{   EditTrackMenuTrackLoHi = 0,
+    EditTrackMenuTrackIndex,
+    EditTrackMenuPlayer,
+    EditTrackMenuTrackLength,
+    EditTrackMenuMax,
+};
+uint8_t editTrack_menu_index;
+
 void editTrack_init()
 {
     editTrack_track = 0;
@@ -490,6 +499,25 @@ void editTrack_line()
     if (internal_line == 0 || internal_line == 9)
     {
         memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
+        if (music_editor_in_menu && line == 0)
+        {   uint32_t *dst = (uint32_t *)draw_buffer + 39;
+            const uint32_t color = BOX_COLOR;
+            switch (editTrack_menu_index)
+            {   case EditTrackMenuTrackIndex:
+                    dst += 4;
+                    break;
+                case EditTrackMenuPlayer:
+                    dst += 18;
+                    break;
+                case EditTrackMenuTrackLength:
+                    dst += 70;
+                    break;
+            }
+            *(++dst) = color;
+            *(++dst) = color;
+            *(++dst) = color;
+            *(++dst) = color;
+        }
         return;
     }
     --internal_line;
@@ -497,15 +525,17 @@ void editTrack_line()
     switch (line)
     {
         case 0:
-        {
-            // edit track
+        {   // track Lx Pp tklen 64
             uint8_t msg[] = {
                 (chip_playing && (track_pos/4 % 2==0)) ? '*' : ' ',
-                't', 'r', 'a', 'c', 'k', ' ', hex_character[editTrack_track], 
+                't', 'r', 'a', 'c', 'k', ' ', 
+                editTrack_track < 16
+                ?   'L' : 'H',
+                hex_character[editTrack_track & 15], 
                 ' ', 'P', hex_character[editTrack_player], 
                 ' ', 'I', hex_character[chip_player[editTrack_player].instrument],
                 ' ', 't', 'k', 'l', 'e', 'n', 
-                ' ', '0' + track_length/10, '0' + track_length%10,
+                ' ', '0' + chip_track_length/10, '0' + chip_track_length%10,
             0 };
             font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
             break;
@@ -670,11 +700,27 @@ void editTrack_line()
             font_render_line_doubled((uint8_t *)"dpad:", 102 - 6*music_editor_in_menu, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 9:
+        {   const char *msg = "";
             if (music_editor_in_menu)
-                font_render_line_doubled((uint8_t *)"switch player", 112, internal_line, 65535, BG_COLOR*257);
+            switch (editTrack_menu_index)
+            {   case EditTrackMenuTrackLoHi:
+                    msg = "change lo/hi";
+                    break;
+                case EditTrackMenuTrackIndex:
+                    msg = "change track";
+                    break;
+                case EditTrackMenuPlayer:
+                    msg = "switch player";
+                    break;
+                case EditTrackMenuTrackLength:
+                    msg = "change track length";
+                    break;
+            }
             else
-                font_render_line_doubled((uint8_t *)"adjust parameters", 112, internal_line, 65535, BG_COLOR*257);
+                msg = "adjust parameters";
+            font_render_line_doubled((const uint8_t *)msg, 112, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
+        }
         case 11:
             if (music_editor_in_menu)
             {
@@ -755,20 +801,45 @@ void editTrack_controls()
 {
     if (music_editor_in_menu)
     {   int switched = 0;
-        if (GAMEPAD_PRESSING(0, down))
-            ++switched;
-        if (GAMEPAD_PRESSING(0, up))
-            --switched;
         if (GAMEPAD_PRESSING(0, left))
             --switched;
         if (GAMEPAD_PRESSING(0, right))
             ++switched;
         if (switched)
-        {
-            game_message[0] = 0;
+        {   game_message[0] = 0;
+            editTrack_menu_index =
+            (   editTrack_menu_index + switched + EditTrackMenuMax
+            ) % EditTrackMenuMax;
+            gamepad_press_wait = GAMEPAD_PRESS_WAIT;
+            return;
+        }
+        if (GAMEPAD_PRESSING(0, down))
+            ++switched;
+        if (GAMEPAD_PRESSING(0, up))
+            --switched;
+        if (switched)
+        {   game_message[0] = 0;
             editTrack_pos = 0;
             editTrack_offset = 0;
-            editTrack_player = (editTrack_player+switched)&3;
+            switch (editTrack_menu_index)
+            {   case EditTrackMenuTrackLoHi:
+                    editTrack_track ^= 16;
+                    break;
+                case EditTrackMenuTrackIndex:
+                    editTrack_track = (editTrack_track & 16) |
+                        ((editTrack_track + switched) & 15);
+                    break;
+                case EditTrackMenuPlayer:
+                    editTrack_player = (editTrack_player+switched)&3;
+                    break;
+                case EditTrackMenuTrackLength:
+                    chip_track_length += switched * 4;
+                    if (chip_track_length > 64)
+                        chip_track_length = 64;
+                    else if (chip_track_length < 16)
+                        chip_track_length = 16;
+                    break;
+            }
             gamepad_press_wait = GAMEPAD_PRESS_WAIT;
             return;
         }

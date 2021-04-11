@@ -49,7 +49,7 @@ static inline void editSong_save_or_load_all(io_event_t save_or_load);
 void editSong_init()
 {
     song_speed = 4;
-    track_length = 32;
+    chip_track_length = 32;
     editSong_color[1] = 0;
     editSong_color[0] = 1;
 }
@@ -85,7 +85,7 @@ void editSong_load_default()
 {
     song_length = 16;
     song_speed = 4;
-    track_length = 32;
+    chip_track_length = 32;
 }
 
 void editSong_render(uint8_t value, int x, int y)
@@ -186,7 +186,7 @@ void editSong_line()
                 ' ', 'X', '0' + editSong_pos/10, '0' + editSong_pos%10, '/',
                 '0' + song_length/10, '0' + song_length%10,
                 ' ', 's', 'p', 'e', 'e', 'd', ' ', '0'+(16-song_speed)/10, '0'+(16-song_speed)%10,
-                ' ', 't', 'k', 'l', 'e', 'n',' ', '0'+track_length/10, '0'+track_length%10,
+                ' ', 't', 'k', 'l', 'e', 'n',' ', '0'+chip_track_length/10, '0'+chip_track_length%10,
             0 };
             font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
             break;
