@@ -901,11 +901,11 @@ void editTrack_controls()
             return;
         }
         
-        int save_or_load = 0;
+        int save_or_load = IoEventNone;
         if (GAMEPAD_PRESS(0, A))
-            save_or_load = 1; // save
+            save_or_load = IoEventSave;
         if (GAMEPAD_PRESS(0, B))
-            save_or_load = 2; // load
+            save_or_load = IoEventLoad;
         if (save_or_load)
         {
             if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
@@ -917,7 +917,7 @@ void editTrack_controls()
             }
 
             io_error_t error;
-            if (save_or_load == 1)
+            if (save_or_load == IoEventSave)
                 error = io_save_track(editTrack_track);
             else
                 error = io_load_track(editTrack_track);
