@@ -318,7 +318,7 @@ io_error_t io_save_instrument(unsigned int i)
 }
 
 io_error_t _io_load_TRACKS(unsigned int i)
-{   // Loads a track.  i should be between 0 and 15 (inclusive).
+{   // Loads a track.  i should be between 0 and 31 (inclusive).
     message(">> loading track %d\n", i);
     UINT bytes_get; 
     fat_result = f_read(&fat_file, chip_track[i], TRACKS_BYTE_STRIDE, &bytes_get);
@@ -330,9 +330,9 @@ io_error_t _io_load_TRACKS(unsigned int i)
 }
 
 io_error_t _io_save_TRACKS(unsigned int i)
-{   // Saves a track.  i should be between 0 and 15 (inclusive).
+{   // Saves a track.  i should be between 0 and 31 (inclusive).
     UINT bytes_get; 
-    fat_result = f_write(&fat_file, chip_track[i], sizeof(chip_track[0]), &bytes_get);
+    fat_result = f_write(&fat_file, chip_track[i], TRACKS_BYTE_STRIDE, &bytes_get);
     if (fat_result != FR_OK)
         return IoWriteError;
     if (bytes_get != sizeof(chip_track[0]))

@@ -560,7 +560,7 @@ static inline void editSong_save_or_load_all(io_event_t save_or_load)
             io_message_from_error(game_message+5, error, IoEventSave);
             return;
         }
-        error = io_save_track(16);
+        error = io_save_track(MAX_TRACKS);
 
         if (error)
         {   strcpy((char *)game_message, "track ");
@@ -585,7 +585,7 @@ static inline void editSong_save_or_load_all(io_event_t save_or_load)
             return;
         }
 
-        error = io_load_track(16);
+        error = io_load_track(MAX_TRACKS);
         if (error)
         {   strcpy((char *)game_message, "track ");
             io_message_from_error(game_message+6, error, IoEventLoad);
