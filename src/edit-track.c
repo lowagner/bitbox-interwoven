@@ -814,9 +814,9 @@ void editTrack_controls()
             return;
         }
         if (GAMEPAD_PRESSING(0, down))
-            ++switched;
-        if (GAMEPAD_PRESSING(0, up))
             --switched;
+        if (GAMEPAD_PRESSING(0, up))
+            ++switched;
         if (switched)
         {   game_message[0] = 0;
             editTrack_pos = 0;
