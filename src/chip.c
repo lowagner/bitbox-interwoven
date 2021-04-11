@@ -526,26 +526,24 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             // In either case, we also set a following wait based on the track arpeggio wait.
             if (param > 11)
             switch (param)
-            {   case 12:
+            {   case ArpPlayLowNote:
                     note = chip_player[i].track_arp_low_note;
                     break;
-                case 13:
+                case ArpPlayHighNote:
                     // Technically this can be off the scale, but that can be fun:
                     note = chip_player[i].track_arp_high_note;
                     break;
-                case 14:
-                    // increment arpeggio
-                    note = chip_player[i].track_note;
-                    // TODO based on scale.
-                    if (++note > chip_player[i].track_arp_high_note)
-                        note = chip_player[i].track_arp_high_note;
-                    break;
-                case 15:
-                    // decrement arpeggio
+                case ArpPlayNextNoteDown:
                     note = chip_player[i].track_note;
                     // TODO based on scale:
                     if (--note < chip_player[i].track_arp_low_note)
                         note = chip_player[i].track_arp_low_note;
+                    break;
+                case ArpPlayNextNoteUp:
+                    note = chip_player[i].track_note;
+                    // TODO based on scale.
+                    if (++note > chip_player[i].track_arp_high_note)
+                        note = chip_player[i].track_arp_high_note;
                     break;
             }
             else

@@ -226,25 +226,21 @@ void editTrack_render_command(int j, int y)
             color_choice[1] = RGB(150,255,150)|(65535<<16);
             if (param >= 12)
             {   switch (param)
-                {   case 12:
-                        // play the low note in the arpeggio
+                {   case ArpPlayLowNote:
                         cmd = 9; // down staircase
                         param = '_';
                         break;
-                    case 13:
-                        // play the high note in the arpeggio, not necessarily on the scale.
+                    case ArpPlayHighNote:
                         cmd = 10; // up staircase
                         param = 248; // upper bar
                         break;
-                    case 14:
-                        // increment note in arpeggio scale
-                        cmd = 10; // up staircase
-                        param = '+';
-                        break;
-                    case 15:
-                        // decrement note in arpeggio scale
+                    case ArpPlayNextNoteDown:
                         cmd = 9; // down staircase
                         param = '-';
+                        break;
+                    case ArpPlayNextNoteUp:
+                        cmd = 10; // up staircase
+                        param = '+';
                         break;
                 }
             }

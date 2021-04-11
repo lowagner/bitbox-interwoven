@@ -136,6 +136,7 @@ typedef enum
     // Also counts as ArpHighNote:
     TrackNote = 5,
     TrackWait = 6,
+    // See chip_arp_note_t for some special behavior:
     TrackArpNote = 7,
     // See chip_scale_t for the different scales:
     TrackArpScale = 8,
@@ -162,6 +163,15 @@ typedef enum
 {   ScaleChromatic = 0,
     // Nothing 16 or above is allowed
 } chip_scale_t;
+
+typedef enum
+{   // Nothing from 0 - 11, those are regular notes from C to B
+    ArpPlayLowNote = 12,
+    ArpPlayHighNote = 13,
+    ArpPlayNextNoteDown = 14,
+    ArpPlayNextNoteUp = 15,
+    // Nothing 16 or above is allowed
+} chip_arp_note_t;
 
 // TODO: make song a list of song cmds, up to 128 commands long
 typedef enum
