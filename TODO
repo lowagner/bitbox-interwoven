@@ -1,0 +1,17 @@
+base stats:
+    health (HP)
+    * health regenerates only through sleeping overnight or through monster drops
+    stamina (SP)
+    * stamina regenerates slowly when walking or quickly when standing still, but only if your FP are non-zero
+    * they also are boosted to 100% when switching screens
+    magic (MP)
+    * magic regenerates to full every time you switch screens
+    guts (GP)
+    * guts regenerates only through sleeping overnight at >= half health and >= half food points.
+        and only one at a time.
+
+hidden stats:
+    food points (FP)
+    * hidden from user, these refill only when you eat.
+    * they decrease to refill up the stamina and magic meters
+
