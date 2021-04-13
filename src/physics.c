@@ -3,28 +3,16 @@
 
 #include <math.h>
 
+// TODO: maybe set to 2.0f.
+// this is important to get right for walking over two blocks that have the same height.
+// at the edge, you can fall down into the crack and get an impulse from the side of the next block
+// if the next block is ordered before the one you're standing on top of.  maybe we can ensure
+// that the block the user is above triggers first (to clip out the lower part of the user's motion)
 #define PHYSICS_GRAVITY 1.0f
 
 physics_object_t physics_object[MAX_PHYSICS_OBJECTS] CCM_MEMORY;
 physics_collision_t physics_collision[MAX_PHYSICS_COLLISIONS] CCM_MEMORY;
 struct physics_static physics_static CCM_MEMORY;
-
-static inline void min_vectors(float *min, const float *va, const float *vb)
-{   min[0] = va[0] < vb[0] ? va[0] : vb[0];
-    min[1] = va[1] < vb[1] ? va[1] : vb[1];
-    min[2] = va[2] < vb[2] ? va[2] : vb[2];
-}
-
-static inline void max_vectors(float *max, const float *va, const float *vb)
-{   max[0] = va[0] > vb[0] ? va[0] : vb[0];
-    max[1] = va[1] > vb[1] ? va[1] : vb[1];
-    max[2] = va[2] > vb[2] ? va[2] : vb[2];
-}
-
-static inline void boundary_union(physics_boundary_t *dst, const physics_boundary_t *b1, const physics_boundary_t *b2)
-{   min_vectors(dst->corner_min, b1->corner_min, b2->corner_min);
-    max_vectors(dst->corner_max, b1->corner_max, b2->corner_max);
-}
 
 static inline void vector_average(float *avg, const float *va, const float *vb)
 {   avg[0] = 0.5f * (va[0] + vb[0]);
@@ -44,18 +32,68 @@ static inline void vector_diff(float *diff, const float *va, const float *vb)
     diff[2] = va[2] - vb[2];
 }
 
-void physics_static_move(int index, physics_boundary_t new_boundary)
-{   // Move a static object around.  Computes the velocity and new size from the new_boundary as well.
+void physics_static_move_preframe(int index, physics_boundary_t new_boundary)
+{   // Move a static object around.
+    // Call before calling physics_frame(), but then make sure to call physics_static_move_postframe() afterwards.
+    // Computes the velocity and new size from the new_boundary as well.
     ASSERT(index >= 0 && index < physics_static.count);
     physics_entity_t *entity = &physics_static.entity[index];
-    float new_center[3];
-    float old_center[3];
-    vector_average(new_center, new_boundary.corner_min, new_boundary.corner_max);
-    vector_average(old_center, entity->boundary.corner_min, entity->boundary.corner_max);
-    vector_diff(entity->size, new_boundary.corner_max, new_boundary.corner_min);
-    vector_diff(entity->velocity, new_center, old_center);
-    boundary_union(&entity->frame_movement, &new_boundary, &entity->boundary);
-    memcpy(&entity->boundary, &new_boundary, sizeof(physics_boundary_t));
+
+    // Does not currently support changing the size.
+    ASSERT(CLOSE(entity->size[0], new_boundary.corner_max[0] - new_boundary.corner_min[0]));
+    ASSERT(CLOSE(entity->size[1], new_boundary.corner_max[1] - new_boundary.corner_min[1]));
+    ASSERT(CLOSE(entity->size[2], new_boundary.corner_max[2] - new_boundary.corner_min[2]));
+    // If we wanted to support changing size, we'd want to average corner_min/max here:
+    vector_diff(entity->velocity, new_boundary.corner_max, entity->boundary.corner_max);
+
+    if (entity->velocity[0] > 0.f)
+    {   entity->snap[0] = SnapToMax;
+        entity->boundary.corner_max[0] = new_boundary.corner_max[0];
+    }
+    else
+    {   entity->snap[0] = SnapToMin;
+        entity->boundary.corner_min[0] = new_boundary.corner_min[0];
+    }
+    if (entity->velocity[1] > 0.f)
+    {   entity->snap[1] = SnapToMax;
+        entity->boundary.corner_max[1] = new_boundary.corner_max[1];
+    }
+    else
+    {   entity->snap[1] = SnapToMin;
+        entity->boundary.corner_min[1] = new_boundary.corner_min[1];
+    }
+    if (entity->velocity[2] > 0.f)
+    {   entity->snap[2] = SnapToMax;
+        entity->boundary.corner_max[2] = new_boundary.corner_max[2];
+    }
+    else
+    {   entity->snap[2] = SnapToMin;
+        entity->boundary.corner_min[2] = new_boundary.corner_min[2];
+    }
+}
+
+static inline void physics_entity_move_postframe(physics_entity_t *entity)
+{   // moves an entity based on snap
+    ASSERT(entity != NULL);
+    if (entity->snap[0] == SnapToMax)
+        entity->boundary.corner_min[0] = entity->boundary.corner_max[0] - entity->size[0];
+    else
+        entity->boundary.corner_max[0] = entity->boundary.corner_min[0] + entity->size[0];
+    if (entity->snap[1] == SnapToMax)
+        entity->boundary.corner_min[1] = entity->boundary.corner_max[1] - entity->size[1];
+    else
+        entity->boundary.corner_max[1] = entity->boundary.corner_min[1] + entity->size[1];
+    if (entity->snap[2] == SnapToMax)
+        entity->boundary.corner_min[2] = entity->boundary.corner_max[2] - entity->size[2];
+    else
+        entity->boundary.corner_max[2] = entity->boundary.corner_min[2] + entity->size[2];
+}
+
+void physics_static_move_postframe(int index)
+{   // Finalizes moving a static object around.  Call after calling physics_frame(), but only if you've
+    // called physics_static_move_preframe() before that.
+    ASSERT(index >= 0 && index < physics_static.count);
+    physics_entity_move_postframe(&physics_static.entity[index]);
 }
 
 void physics_reset()
@@ -90,21 +128,40 @@ static inline void physics_reset_collisions()
     }
 }
 
-static inline void physics_update_object(uint8_t index)
+static inline void physics_stretch_object(uint8_t index)
 {   ASSERT(index > 0);
     ASSERT(index < MAX_PHYSICS_OBJECTS);
     physics_entity_t *entity = &physics_object[index].entity;
-    physics_boundary_t new_boundary;
     // TODO: add delta_t for slow down sections, both to velocity-delta and position-delta:
     entity->velocity[2] += PHYSICS_GRAVITY; // velocity-delta
-    // TODO: if incorporating size-changes, measure velocity from center of previous boundary
-    vector_add(new_boundary.corner_min, entity->boundary.corner_min, entity->velocity); // position-delta
-    vector_add(new_boundary.corner_max, new_boundary.corner_min, entity->size);
-    boundary_union(&entity->frame_movement, &new_boundary, &entity->boundary);
-    // Don't update entity->boundary yet, since it might collide with things.
+
+    if (entity->velocity[0] > 0.f)
+    {   entity->snap[0] = SnapToMax;
+        entity->boundary.corner_max[0] += entity->velocity[0];
+    }
+    else
+    {   entity->snap[0] = SnapToMin;
+        entity->boundary.corner_min[0] += entity->velocity[0];
+    }
+    if (entity->velocity[1] > 0.f)
+    {   entity->snap[1] = SnapToMax;
+        entity->boundary.corner_max[1] += entity->velocity[1];
+    }
+    else
+    {   entity->snap[1] = SnapToMin;
+        entity->boundary.corner_min[1] += entity->velocity[1];
+    }
+    if (entity->velocity[2] > 0.f)
+    {   entity->snap[2] = SnapToMax;
+        entity->boundary.corner_max[2] += entity->velocity[2];
+    }
+    else
+    {   entity->snap[2] = SnapToMin;
+        entity->boundary.corner_min[2] += entity->velocity[2];
+    }
 }
 
-static inline uint8_t physics_add_collision(uint8_t index, uint8_t other)
+static inline uint8_t physics_add_generic_collision(uint8_t index, uint8_t other)
 {   // adds a collision to physics_object[index] with `other`
     // doesn't add any metadata yet besides who collided.
     ASSERT(index > 0);
@@ -133,8 +190,8 @@ static inline uint8_t physics_add_collision(uint8_t index, uint8_t other)
     return collision;
 }
 
-static inline float boundary_subtract_index
-(   physics_boundary_t *boundary, const physics_boundary_t *remove, int index
+static inline float boundary_get_impulse_index
+(   int index, physics_boundary_t *boundary, const physics_boundary_t *remove
 )
 {   // Returns impulse required to keep `boundary` out of `remove`, where index == dimension index.
     // cases: just for X (index = 0), but similarly for Y (index = 1) and Z (index = 2):
@@ -178,13 +235,13 @@ static inline float boundary_subtract_index
     }
 }
 
-static inline void boundary_subtract(physics_boundary_t *boundary, const physics_boundary_t *remove, float *impulse)
+static inline void boundary_get_impulse(float *impulse, physics_boundary_t *boundary, const physics_boundary_t *remove)
 {   // We want to find the smallest (in magnitude) impulse that gets us out of trouble.
     // Since changing any dimension sufficiently can undo a collision, we figure out the
     // impulse required to escape in any dimension, and then zero out all but the smallest.
-    impulse[0] = boundary_subtract_index(boundary, remove, 0);
-    impulse[1] = boundary_subtract_index(boundary, remove, 1);
-    impulse[2] = boundary_subtract_index(boundary, remove, 2);
+    impulse[0] = boundary_get_impulse_index(0, boundary, remove);
+    impulse[1] = boundary_get_impulse_index(1, boundary, remove);
+    impulse[2] = boundary_get_impulse_index(2, boundary, remove);
     float i_absolute[3] = {
         fabs(impulse[0]),
         fabs(impulse[1]),
@@ -209,9 +266,6 @@ static inline void boundary_subtract(physics_boundary_t *boundary, const physics
             // z is the smallest
             impulse[0] = impulse[1] = 0.f;
     }
-    // TODO: actually remove boundary
-    // we might actually want to adjust the velocity now for static objects
-    // TODO: give crush damage when two static things are pushing together on you
 }
 
 static inline void physics_add_static_collision(uint8_t index, uint8_t other)
@@ -220,13 +274,32 @@ static inline void physics_add_static_collision(uint8_t index, uint8_t other)
     ASSERT(index < MAX_PHYSICS_OBJECTS);
     ASSERT(other > 0);
     ASSERT(other < physics_static.count);
-    uint8_t collision = physics_add_collision(index, other + MAX_PHYSICS_OBJECTS);
+    uint8_t collision = physics_add_generic_collision(index, other + MAX_PHYSICS_OBJECTS);
     if (!collision) return;
     // See what sort of impulse it would require to remove the object from the static:
-    boundary_subtract
-    (   &physics_object[index].entity.frame_movement,
-        &physics_static.entity[other].frame_movement,
-        physics_collision[collision].impulse
+    boundary_get_impulse
+    (   physics_collision[collision].impulse,
+        &physics_object[index].entity.boundary,
+        &physics_static.entity[other].boundary
+    );
+    // TODO: actually remove boundary
+    // we might actually want to adjust the velocity now for static objects
+    // TODO: give crush damage when two static things are pushing together on you
+}
+
+static inline void physics_add_dynamic_collision(uint8_t index, uint8_t other)
+{   // adds a collision to physics_object[index] with physics_object[other]
+    ASSERT(index > 0);
+    ASSERT(index < MAX_PHYSICS_OBJECTS);
+    ASSERT(other > 0);
+    ASSERT(other < MAX_PHYSICS_OBJECTS);
+    uint8_t collision = physics_add_generic_collision(index, other);
+    if (!collision) return;
+    // See what sort of impulse it would require to remove the object from the static:
+    boundary_get_impulse
+    (   physics_collision[collision].impulse,
+        &physics_object[index].entity.boundary,
+        &physics_static.entity[other].boundary
     );
 }
 
@@ -234,18 +307,36 @@ void physics_frame()
 {   physics_reset_collisions();
     ASSERT(physics_static.count < MAX_PHYSICS_STATICS);
     LL_ITERATE
-    (   physics_object, next_object, index,
-        // update object and see if it ran into any static things.
+    (   physics_object, next_object, index, 0,
+        // update object based on velocity/acceleration and see if it ran into any static things.
 
-        physics_update_object(index);
+        physics_stretch_object(index);
         for (uint8_t ps = 0; ps < physics_static.count; ++ps)
         if
         (   physics_overlap
-            (   &physics_object[index].entity.frame_movement,
-                &physics_static.entity[ps].frame_movement
+            (   &physics_object[index].entity.boundary,
+                &physics_static.entity[ps].boundary
             )
         )
-            physics_add_static_collision(index, ps); 
+            physics_add_static_collision(index, ps);
+    );
+
+    LL_ITERATE
+    (   physics_object, next_object, index, 0,
+        // update object based on interactions with any non-static things.
+
+        LL_ITERATE
+        (   physics_object, next_object, other, index /* collide only with objects with larger indices */,
+            if
+            (   physics_overlap
+                (   &physics_object[index].entity.boundary,
+                    &physics_object[other].entity.boundary
+                )
+            )
+                physics_add_dynamic_collision(index, other);
+        );
+
+        physics_entity_move_postframe(&physics_object[index].entity);
     );
 }
 
@@ -357,23 +448,6 @@ void test_physics()
             .corner_max = {2, 0, 4},
         };
         ASSERT(physics_overlap(&boundary1, &boundary2) == 1);
-    }
-    {   // Test union boundaries
-        physics_boundary_t boundary1 = {
-            .corner_min = {-5, -1, 1},
-            .corner_max = {-2, 10, 4},
-        };
-        physics_boundary_t boundary2 = {
-            .corner_min = {-6, 0, 1},
-            .corner_max = {-1, 3, 5},
-        };
-        physics_boundary_t expected = {
-            .corner_min = {-6, -1, 1},
-            .corner_max = {-1, 10, 5},
-        };
-        physics_boundary_t value;
-        boundary_union(&value, &boundary1, &boundary2);
-        ASSERT(memcmp(&value, &expected, sizeof(physics_boundary_t)) == 0);
     }
     message("physics tests passed!\n");
 }

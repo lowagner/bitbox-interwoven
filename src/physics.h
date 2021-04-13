@@ -12,18 +12,28 @@ typedef struct physics_boundary
     float corner_min[3], corner_max[3];
 } physics_boundary_t;
 
+typedef enum
+{   SnapToMax = 0,
+    SnapToMin = 1,
+} physics_snap_t;
+
 typedef struct physics_entity
 {   // If a static entity, it can be moved around programatically using the `physics_static_move` function,
     // or if inside a physics_object you can just update the velocity.
-    // Current boundary of the entity:
+    // Current boundary of the entity.
+    // During a frame step, this stretches (based on velocity) to encompass both start and end points.
     physics_boundary_t boundary;
+    // Helper to snap back `boundary` to the correct size at the end of a frame.
+    // * if snap[0] == SnapToMin, then we set boundary.corner_max[0] = boundary.corner_min[0] + size[0]
+    //   if snap[0] == SnapToMax, then we set boundary.corner_min[0] = boundary.corner_max[0] - size[0]
+    // * and similarly for y ([1]) and z ([2]).
+    uint8_t snap[3];
+    uint8_t friction;
     // Size in each dimension x,y,z, e.g. width/length/height:
     float size[3];
     // TODO: add support for this:
     // Things that are on top of this entity will experience a force in the direction of velocity due to friction
     float velocity[3];
-    // Min/max boundaries for the movement that we just did in the last frame:
-    physics_boundary_t frame_movement;
 } physics_entity_t;
 
 typedef struct physics_object
@@ -71,7 +81,8 @@ typedef struct physics_collision
 extern physics_collision_t physics_collision[MAX_PHYSICS_COLLISIONS];
 
 void physics_reset();
-void physics_static_move(int index, physics_boundary_t new_boundary);
+void physics_static_move_preframe(int index, physics_boundary_t new_boundary);
+void physics_static_move_postframe(int index);
 uint8_t physics_new_object();
 void physics_free_object(uint8_t index);
 void physics_frame();

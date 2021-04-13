@@ -18,6 +18,8 @@
     bitbox_die(-1, 0); \
 }})
 
+#define CLOSE(x, y) (fabs((x) - (y)) < 1e-3)
+
 #define GAMEPAD_PRESS_WAIT 8
 #define GAMEPAD_PRESS(id, key) ((gamepad_buttons[id]) & (~old_gamepad[id]) & (gamepad_##key))
 #define GAMEPAD_PRESSING(id, key) ((gamepad_buttons[id]) & (gamepad_##key) & (~old_gamepad[id] | ((gamepad_press_wait == 0)*gamepad_##key)))
@@ -50,8 +52,8 @@ void game_set_message_with_timeout(const char *msg, int timeout);
 
 #define MESSAGE_TIMEOUT (10*64)
 
-#define LL_ITERATE(container, next_name, index, fn) \
-    {   uint8_t index = container[0].next_name; \
+#define LL_ITERATE(container, next_name, index, starting_after, fn) \
+    {   uint8_t index = container[starting_after].next_name; \
         while (index) { \
             fn; \
             index = container[index].next_name; \
