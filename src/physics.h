@@ -64,6 +64,8 @@ typedef struct physics_collision
         // only used in root collision:
         uint8_t next_free;
     };
+    // impulse on object at index1; object at index2 would get the opposite value:
+    float impulse[3];
 } physics_collision_t;
 
 extern physics_collision_t physics_collision[MAX_PHYSICS_COLLISIONS];

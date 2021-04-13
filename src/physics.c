@@ -1,6 +1,8 @@
 #include "game.h"
 #include "physics.h"
 
+#define PHYSICS_GRAVITY 1.0f
+
 physics_object_t physics_object[MAX_PHYSICS_OBJECTS] CCM_MEMORY;
 physics_collision_t physics_collision[MAX_PHYSICS_COLLISIONS] CCM_MEMORY;
 struct physics_static physics_static CCM_MEMORY;
@@ -22,13 +24,19 @@ static inline void boundary_union(physics_boundary_t *dst, const physics_boundar
     max_vectors(dst->corner_max, b1->corner_max, b2->corner_max);
 }
 
-static inline void average_vectors(float *avg, const float *va, const float *vb)
+static inline void vector_average(float *avg, const float *va, const float *vb)
 {   avg[0] = 0.5f * (va[0] + vb[0]);
     avg[1] = 0.5f * (va[1] + vb[1]);
     avg[2] = 0.5f * (va[2] + vb[2]);
 }
 
-static inline void diff_vectors(float *diff, const float *va, const float *vb)
+static inline void vector_add(float *avg, const float *va, const float *vb)
+{   avg[0] = va[0] + vb[0];
+    avg[1] = va[1] + vb[1];
+    avg[2] = va[2] + vb[2];
+}
+
+static inline void vector_diff(float *diff, const float *va, const float *vb)
 {   diff[0] = va[0] - vb[0];
     diff[1] = va[1] - vb[1];
     diff[2] = va[2] - vb[2];
@@ -40,10 +48,10 @@ void physics_static_move(int index, physics_boundary_t new_boundary)
     physics_entity_t *entity = &physics_static.entity[index];
     float new_center[3];
     float old_center[3];
-    average_vectors(new_center, new_boundary.corner_min, new_boundary.corner_max);
-    average_vectors(old_center, entity->boundary.corner_min, entity->boundary.corner_max);
-    diff_vectors(entity->size, new_boundary.corner_max, new_boundary.corner_min);
-    diff_vectors(entity->velocity, new_center, old_center);
+    vector_average(new_center, new_boundary.corner_min, new_boundary.corner_max);
+    vector_average(old_center, entity->boundary.corner_min, entity->boundary.corner_max);
+    vector_diff(entity->size, new_boundary.corner_max, new_boundary.corner_min);
+    vector_diff(entity->velocity, new_center, old_center);
     boundary_union(&entity->frame_movement, &new_boundary, &entity->boundary);
     memcpy(&entity->boundary, &new_boundary, sizeof(physics_boundary_t));
 }
@@ -60,7 +68,15 @@ uint8_t physics_new_object()
 
 void physics_free_object(uint8_t index)
 {   // returns an index to a free physics_object, or zero if none.
-    LL_FREE(physics_object, index);
+    LL_FREE(physics_object, next_object, previous_object, index);
+}
+
+uint8_t physics_new_collision()
+{   LL_NEW(physics_collision, next_collision, previous_collision, MAX_PHYSICS_COLLISIONS);
+}
+
+void physics_free_collision(uint8_t index)
+{   LL_FREE(physics_collision, next_collision, previous_collision, index);
 }
 
 static inline void physics_reset_collisions()
@@ -72,9 +88,78 @@ static inline void physics_reset_collisions()
     }
 }
 
+static inline void physics_update_object(uint8_t index)
+{   ASSERT(index > 0);
+    ASSERT(index < MAX_PHYSICS_OBJECTS);
+    physics_entity_t *entity = &physics_object[index].entity;
+    physics_boundary_t new_boundary;
+    // TODO: add delta_t for slow down sections, both to velocity-delta and position-delta:
+    entity->velocity[2] += PHYSICS_GRAVITY; // velocity-delta
+    // TODO: if incorporating size-changes, measure velocity from center of previous boundary
+    vector_add(new_boundary.corner_min, entity->boundary.corner_min, entity->velocity); // position-delta
+    vector_add(new_boundary.corner_max, new_boundary.corner_min, entity->size);
+    boundary_union(&entity->frame_movement, &new_boundary, &entity->boundary);
+    // We'll be optimistic and try to update the new position, it will probably hit something, though.
+    memcpy(&entity->boundary, &new_boundary, sizeof(physics_boundary_t));
+}
+
+static inline uint8_t physics_add_collision(uint8_t index, uint8_t other)
+{   // adds a collision to physics_object[index] with `other`
+    // doesn't add any metadata yet besides who collided.
+    ASSERT(index > 0);
+    ASSERT(index < MAX_PHYSICS_OBJECTS);
+    ASSERT(other > 0);
+    ASSERT(other < MAX_PHYSICS_OBJECTS + physics_static.count);
+    uint8_t *collision_save_location = physics_object[index].collision;
+    if (*collision_save_location)
+    {   if (*++collision_save_location)
+        {   if (*++collision_save_location)
+            {   if (*++collision_save_location)
+                {   message("dropped a collision %d <-> %d, more than 4 on first.\n", (int)index, (int)other);
+                    return 0;
+                }
+            }
+        }
+    }
+    uint8_t collision = physics_new_collision();
+    if (!collision)
+    {   message("dropped a collision %d <-> %d, ran out of free collisions\n", (int)index, (int)other);
+        return 0;
+    }
+    *collision_save_location = collision;
+    physics_collision[collision].index1 = index;
+    physics_collision[collision].index2 = MAX_PHYSICS_OBJECTS + other;
+    return collision;
+}
+
+static inline void physics_add_static_collision(uint8_t index, uint8_t other)
+{   // adds a collision to physics_object[index] with `other`, which is indexed in static list.
+    ASSERT(index > 0);
+    ASSERT(index < MAX_PHYSICS_OBJECTS);
+    ASSERT(other > 0);
+    ASSERT(other < physics_static.count);
+    uint8_t collision = physics_add_collision(index, other + MAX_PHYSICS_OBJECTS);
+    if (!collision) return;
+    // TODO:
+}
+
 void physics_frame()
 {   physics_reset_collisions();
+    ASSERT(physics_static.count < MAX_PHYSICS_STATICS);
+    LL_ITERATE
+    (   physics_object, next_object, index,
+        // update object and see if it ran into any static things.
 
+        physics_update_object(index);
+        for (uint8_t ps = 0; ps < physics_static.count; ++ps)
+        if
+        (   physics_overlap
+            (   &physics_object[index].entity.frame_movement,
+                &physics_static.entity[ps].frame_movement
+            )
+        )
+            physics_add_static_collision(index, ps); 
+    );
 }
 
 int physics_overlap(const physics_boundary_t *b1, const physics_boundary_t *b2)

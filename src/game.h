@@ -50,6 +50,14 @@ void game_set_message_with_timeout(const char *msg, int timeout);
 
 #define MESSAGE_TIMEOUT (10*64)
 
+#define LL_ITERATE(container, next_name, index, fn) \
+    {   uint8_t index = container[0].next_name; \
+        while (index) { \
+            fn; \
+            index = container[index].next_name; \
+        }   \
+    }
+
 #define LL_RESET(container, next_name, previous_name, MAX_COUNT) \
     container[0].next_name = 0; \
     container[0].previous_name = 0; \
@@ -79,8 +87,13 @@ void game_set_message_with_timeout(const char *msg, int timeout);
     \
     return index;
 
-#define LL_FREE(container, index) \
+#define LL_FREE(container, next_name, previous_name, index) \
+{   uint8_t previous = container[index].previous_name; \
+    uint8_t next = container[index].next_name; \
+    container[previous].next_name = next; \
+    container[next].previous_name = previous; \
     container[index].next_free = container[0].next_free; \
-    container[0].next_free = index;
+    container[0].next_free = index; \
+}
 
 #endif

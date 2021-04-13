@@ -59,7 +59,7 @@ void sprite_free(uint8_t index)
     sprite_detach_from_draw(index);
 
     // update the free list:
-    LL_FREE(sprite, index);
+    LL_FREE(sprite, next_to_draw, previous_to_draw, index);
 }
 
 static inline void sprite_insert_before_visible(uint8_t index, uint8_t next_visible)
