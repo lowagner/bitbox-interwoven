@@ -4,10 +4,6 @@
 #include <math.h>
 
 // TODO: maybe set to 2.0f.
-// this is important to get right for walking over two blocks that have the same height.
-// at the edge, you can fall down into the crack and get an impulse from the side of the next block
-// if the next block is ordered before the one you're standing on top of.  maybe we can ensure
-// that the block the user is above triggers first (to clip out the lower part of the user's motion)
 #define PHYSICS_GRAVITY 1.0f
 
 physics_object_t physics_object[MAX_PHYSICS_OBJECTS] CCM_MEMORY;
@@ -247,23 +243,23 @@ static inline void boundary_get_impulse(float *impulse, physics_boundary_t *boun
         fabs(impulse[1]),
         fabs(impulse[2]),
     };
-    // Find smallest absolute value:
-    if (i_absolute[0] < i_absolute[1])
-    {   // x < y
-        if (i_absolute[2] < i_absolute[0])
-            // z is the smallest
-            impulse[0] = impulse[1] = 0.f;
-        else
-            // x is the smallest
-            impulse[1] = impulse[2] = 0.f;
-    }
-    else
-    {   // x >= y
+    // Find smallest absolute value, breaking ties towards x and z (highest priority):
+    if (i_absolute[1] < i_absolute[0])
+    {   // y < x
         if (i_absolute[1] < i_absolute[2])
-            // y is the smallest
+            // y is the smallest (y < z)
             impulse[0] = impulse[2] = 0.f;
         else
-            // z is the smallest
+            // z is the smallest (z <= y)
+            impulse[0] = impulse[1] = 0.f;
+    }
+    else
+    {   // x <= y
+        if (i_absolute[0] < i_absolute[2])
+            // x is the smallest (x < z)
+            impulse[1] = impulse[2] = 0.f;
+        else
+            // z is the smallest (z <= x)
             impulse[0] = impulse[1] = 0.f;
     }
 }
@@ -311,6 +307,35 @@ void physics_frame()
         // update object based on velocity/acceleration and see if it ran into any static things.
 
         physics_stretch_object(index);
+
+        // interact with floor below you, if present:
+        uint8_t static_floor = physics_object[index].entity.on_top_of;
+        if (static_floor)
+        {   ASSERT(static_floor >= MAX_PHYSICS_OBJECTS);
+            static_floor -= MAX_PHYSICS_OBJECTS;
+            // this is important to get right for walking over two blocks that have the same height.
+            // at the edge, you can fall down into the crack and get an impulse from the side of the next block
+            // if the next block is ordered before the one you're standing on top of.  here we ensure
+            // that the block the user is above triggers first (to clip out the lower part of the user's motion)
+            if
+            (   physics_overlap
+                (   &physics_object[index].entity.boundary,
+                    &physics_static.entity[static_floor].boundary
+                )
+            )
+                physics_add_static_collision(index, static_floor);
+
+            for (uint8_t ps = 0; ps < physics_static.count; ++ps)
+            if
+            (   ps != static_floor /* super important, don't hit static floor again */
+                && physics_overlap
+                (   &physics_object[index].entity.boundary,
+                    &physics_static.entity[ps].boundary
+                )
+            )
+                physics_add_static_collision(index, ps);
+        }
+        else
         for (uint8_t ps = 0; ps < physics_static.count; ++ps)
         if
         (   physics_overlap

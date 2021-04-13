@@ -28,7 +28,9 @@ typedef struct physics_entity
     //   if snap[0] == SnapToMax, then we set boundary.corner_min[0] = boundary.corner_max[0] - size[0]
     // * and similarly for y ([1]) and z ([2]).
     uint8_t snap[3];
-    uint8_t friction;
+    // For dynamic objects only, this is MAX_PHYSICS_OBJECTS + static_index
+    // if this object is on top of a static object at physics_static.entity[static_index]:
+    uint8_t on_top_of;
     // Size in each dimension x,y,z, e.g. width/length/height:
     float size[3];
     // TODO: add support for this:
