@@ -1,6 +1,8 @@
 #include "game.h"
 #include "physics.h"
 
+#include <math.h>
+
 #define PHYSICS_GRAVITY 1.0f
 
 physics_object_t physics_object[MAX_PHYSICS_OBJECTS] CCM_MEMORY;
@@ -99,8 +101,7 @@ static inline void physics_update_object(uint8_t index)
     vector_add(new_boundary.corner_min, entity->boundary.corner_min, entity->velocity); // position-delta
     vector_add(new_boundary.corner_max, new_boundary.corner_min, entity->size);
     boundary_union(&entity->frame_movement, &new_boundary, &entity->boundary);
-    // We'll be optimistic and try to update the new position, it will probably hit something, though.
-    memcpy(&entity->boundary, &new_boundary, sizeof(physics_boundary_t));
+    // Don't update entity->boundary yet, since it might collide with things.
 }
 
 static inline uint8_t physics_add_collision(uint8_t index, uint8_t other)
@@ -132,6 +133,87 @@ static inline uint8_t physics_add_collision(uint8_t index, uint8_t other)
     return collision;
 }
 
+static inline float boundary_subtract_index
+(   physics_boundary_t *boundary, const physics_boundary_t *remove, int index
+)
+{   // Returns impulse required to keep `boundary` out of `remove`, where index == dimension index.
+    // cases: just for X (index = 0), but similarly for Y (index = 1) and Z (index = 2):
+    // X.I: boundary->corner_min.x < remove->corner_min.x
+    // * X.I.a: boundary->corner_max.x < remove->corner_max.x
+    //        xxxxxxx       xxxxxxx
+    //      bbccxxxxx ==> bbxxxxxxx     impulse < 0
+    //      bbbb          bb
+    // * X.I.b: boundary->corner_max.x > remove->corner_max.x
+    //        xxxxxxx
+    //      bbcccccccbb ==> plus or minus infinity
+    //      bbbbbbbbbbb
+    // X.II: boundary->corner_min.x > remove->corner_min.x
+    // * X.II.a: boundary->corner_max.x < remove->corner_max.x
+    //        xxxxxxx
+    //        xxcccxx ==> plus or minus infinity
+    //          bbb
+    // * X.II.b: boundary->corner_max.x > remove->corner_max.x
+    //        xxxxxxx       xxxxxxx
+    //        xxxxxccbb ==> xxxxxxxbb   impulse > 0
+    //             bbbb            bb
+    
+    // TODO: add support for a delta_t
+    if (boundary->corner_min[index] < remove->corner_min[index])
+    {   // I
+        if (boundary->corner_max[index] < remove->corner_max[index])
+            // I.a
+            return remove->corner_min[index] - boundary->corner_max[index];
+        else
+            // I.b
+            return -INFINITY;
+    }
+    else
+    {   // II
+        if (boundary->corner_max[index] < remove->corner_max[index])
+            // II.a
+            return INFINITY;
+        else
+            // II.b
+            return remove->corner_max[index] - boundary->corner_min[index];
+    }
+}
+
+static inline void boundary_subtract(physics_boundary_t *boundary, const physics_boundary_t *remove, float *impulse)
+{   // We want to find the smallest (in magnitude) impulse that gets us out of trouble.
+    // Since changing any dimension sufficiently can undo a collision, we figure out the
+    // impulse required to escape in any dimension, and then zero out all but the smallest.
+    impulse[0] = boundary_subtract_index(boundary, remove, 0);
+    impulse[1] = boundary_subtract_index(boundary, remove, 1);
+    impulse[2] = boundary_subtract_index(boundary, remove, 2);
+    float i_absolute[3] = {
+        fabs(impulse[0]),
+        fabs(impulse[1]),
+        fabs(impulse[2]),
+    };
+    // Find smallest absolute value:
+    if (i_absolute[0] < i_absolute[1])
+    {   // x < y
+        if (i_absolute[2] < i_absolute[0])
+            // z is the smallest
+            impulse[0] = impulse[1] = 0.f;
+        else
+            // x is the smallest
+            impulse[1] = impulse[2] = 0.f;
+    }
+    else
+    {   // x >= y
+        if (i_absolute[1] < i_absolute[2])
+            // y is the smallest
+            impulse[0] = impulse[2] = 0.f;
+        else
+            // z is the smallest
+            impulse[0] = impulse[1] = 0.f;
+    }
+    // TODO: actually remove boundary
+    // we might actually want to adjust the velocity now for static objects
+    // TODO: give crush damage when two static things are pushing together on you
+}
+
 static inline void physics_add_static_collision(uint8_t index, uint8_t other)
 {   // adds a collision to physics_object[index] with `other`, which is indexed in static list.
     ASSERT(index > 0);
@@ -140,7 +222,12 @@ static inline void physics_add_static_collision(uint8_t index, uint8_t other)
     ASSERT(other < physics_static.count);
     uint8_t collision = physics_add_collision(index, other + MAX_PHYSICS_OBJECTS);
     if (!collision) return;
-    // TODO:
+    // See what sort of impulse it would require to remove the object from the static:
+    boundary_subtract
+    (   &physics_object[index].entity.frame_movement,
+        &physics_static.entity[other].frame_movement,
+        physics_collision[collision].impulse
+    );
 }
 
 void physics_frame()
