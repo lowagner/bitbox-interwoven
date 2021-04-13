@@ -273,14 +273,41 @@ static inline void physics_add_static_collision(uint8_t index, uint8_t other)
     uint8_t collision = physics_add_generic_collision(index, other + MAX_PHYSICS_OBJECTS);
     if (!collision) return;
     // See what sort of impulse it would require to remove the object from the static:
+    float *impulse = physics_collision[collision].impulse;
+    physics_boundary_t *dynamic_boundary = &physics_object[index].entity.boundary;
     boundary_get_impulse
-    (   physics_collision[collision].impulse,
-        &physics_object[index].entity.boundary,
+    (   impulse,
+        dynamic_boundary,
         &physics_static.entity[other].boundary
     );
-    // TODO: actually remove boundary
-    // we might actually want to adjust the velocity now for static objects
-    // TODO: give crush damage when two static things are pushing together on you
+    // we adjust the velocity later based on impulses from all static objects.
+    // Don't add them now since we wouldn't know how much impulse the object has
+    // already felt, and some impulses might be unnecessary if another
+    // static object has already provided it.
+
+    // Decrease the size of the dynamic_boundary since it shouldn't be
+    // allowed to go through the static entity:
+    if (impulse[2] != 0.f)
+    {   // z interaction
+        if (impulse[2] > 0.f)
+            dynamic_boundary->corner_min[2] += impulse[2];
+        else
+            dynamic_boundary->corner_max[2] += impulse[2];
+    }
+    else if (impulse[0] != 0.f)
+    {   // x interaction
+        if (impulse[0] > 0.f)
+            dynamic_boundary->corner_min[0] += impulse[0];
+        else
+            dynamic_boundary->corner_max[0] += impulse[0];
+    }
+    else
+    {   // y interaction
+        if (impulse[1] > 0.f)
+            dynamic_boundary->corner_min[1] += impulse[1];
+        else
+            dynamic_boundary->corner_max[1] += impulse[1];
+    }
 }
 
 static inline void physics_add_dynamic_collision(uint8_t index, uint8_t other)
@@ -361,6 +388,14 @@ void physics_frame()
                 physics_add_dynamic_collision(index, other);
         );
 
+        // TODO: adjust the velocity based on impulses from all static objects
+        // TODO: give crush damage when two static things are pushing together on you
+
+        // TODO: check if snapping to max or min still allows you to fill up the correct size.
+        // i.e., if a static object is moving into you and decreasing your boundary volume,
+        // while you are moving away from the static object (but not as fast), your snap-to will
+        // be on the side away from the static object, which means that snapping there could clip
+        // you into the object.
         physics_entity_move_postframe(&physics_object[index].entity);
     );
 }
