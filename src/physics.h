@@ -29,7 +29,7 @@ typedef struct physics_entity
     // * and similarly for y ([1]) and z ([2]).
     uint8_t snap[3];
     // For dynamic objects only, this is MAX_PHYSICS_OBJECTS + static_index
-    // if this object is on top of a static object at physics_static.entity[static_index]:
+    // if this object is on top of a static object at physics_static.entity[static_index], otherwise zero:
     uint8_t on_top_of;
     // Size in each dimension x,y,z, e.g. width/length/height:
     float size[3];
@@ -63,6 +63,17 @@ struct physics_static
 
 extern struct physics_static physics_static;
 
+typedef enum
+{   DirectionPlusX,
+    DirectionMinusX,
+    DirectionPlusY,
+    DirectionMinusY,
+    DirectionPlusZ,
+    DirectionMinusZ,
+    // Do not use directly, except to size up a float array.
+    DirectionCount,
+} direction_t;
+
 typedef struct physics_collision
 {   // Description of a collision
     uint8_t next_collision, previous_collision;
@@ -76,8 +87,12 @@ typedef struct physics_collision
         // only used in root collision:
         uint8_t next_free;
     };
-    // impulse on object at index1; object at index2 would get the opposite value:
-    float impulse[3];
+    // magnitude of impulse on object at index1; object at index2 would get the same magnitude
+    // but its direction would be opposite:
+    struct
+    {   float magnitude;
+        int direction;
+    } impulse;
 } physics_collision_t;
 
 extern physics_collision_t physics_collision[MAX_PHYSICS_COLLISIONS];

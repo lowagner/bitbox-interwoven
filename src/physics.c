@@ -1,6 +1,7 @@
 #include "game.h"
 #include "physics.h"
 
+#include <assert.h>
 #include <math.h>
 
 // TODO: maybe set to 2.0f.
@@ -231,13 +232,17 @@ static inline float boundary_get_impulse_index
     }
 }
 
-static inline void boundary_get_impulse(float *impulse, physics_boundary_t *boundary, const physics_boundary_t *remove)
+static inline void collision_get_impulse
+(   physics_collision_t *collision, physics_boundary_t *boundary, const physics_boundary_t *remove
+)
 {   // We want to find the smallest (in magnitude) impulse that gets us out of trouble.
     // Since changing any dimension sufficiently can undo a collision, we figure out the
     // impulse required to escape in any dimension, and then zero out all but the smallest.
-    impulse[0] = boundary_get_impulse_index(0, boundary, remove);
-    impulse[1] = boundary_get_impulse_index(1, boundary, remove);
-    impulse[2] = boundary_get_impulse_index(2, boundary, remove);
+    float impulse[3] = {
+        boundary_get_impulse_index(0, boundary, remove),
+        boundary_get_impulse_index(1, boundary, remove),
+        boundary_get_impulse_index(2, boundary, remove),
+    };
     float i_absolute[3] = {
         fabs(impulse[0]),
         fabs(impulse[1]),
@@ -247,20 +252,28 @@ static inline void boundary_get_impulse(float *impulse, physics_boundary_t *boun
     if (i_absolute[1] < i_absolute[0])
     {   // y < x
         if (i_absolute[1] < i_absolute[2])
-            // y is the smallest (y < z)
-            impulse[0] = impulse[2] = 0.f;
+        {   // y is the smallest (y < z)
+            collision->impulse.magnitude = i_absolute[1];
+            collision->impulse.direction = impulse[1] > 0.f ? DirectionPlusY : DirectionMinusY;
+        }
         else
-            // z is the smallest (z <= y)
-            impulse[0] = impulse[1] = 0.f;
+        {   // z is the smallest (z <= y)
+            collision->impulse.magnitude = i_absolute[2];
+            collision->impulse.direction = impulse[2] > 0.f ? DirectionPlusZ : DirectionMinusZ;
+        }
     }
     else
     {   // x <= y
         if (i_absolute[0] < i_absolute[2])
-            // x is the smallest (x < z)
-            impulse[1] = impulse[2] = 0.f;
+        {   // x is the smallest (x < z)
+            collision->impulse.magnitude = i_absolute[0];
+            collision->impulse.direction = impulse[0] > 0.f ? DirectionPlusX : DirectionMinusX;
+        }
         else
-            // z is the smallest (z <= x)
-            impulse[0] = impulse[1] = 0.f;
+        {   // z is the smallest (z <= x)
+            collision->impulse.magnitude = i_absolute[2];
+            collision->impulse.direction = impulse[2] > 0.f ? DirectionPlusZ : DirectionMinusZ;
+        }
     }
 }
 
@@ -270,13 +283,13 @@ static inline void physics_add_static_collision(uint8_t index, uint8_t other)
     ASSERT(index < MAX_PHYSICS_OBJECTS);
     ASSERT(other > 0);
     ASSERT(other < physics_static.count);
-    uint8_t collision = physics_add_generic_collision(index, other + MAX_PHYSICS_OBJECTS);
-    if (!collision) return;
+    uint8_t collision_index = physics_add_generic_collision(index, other + MAX_PHYSICS_OBJECTS);
+    if (!collision_index) return;
     // See what sort of impulse it would require to remove the object from the static:
-    float *impulse = physics_collision[collision].impulse;
+    physics_collision_t *collision = &physics_collision[collision_index];
     physics_boundary_t *dynamic_boundary = &physics_object[index].entity.boundary;
-    boundary_get_impulse
-    (   impulse,
+    collision_get_impulse
+    (   collision,
         dynamic_boundary,
         &physics_static.entity[other].boundary
     );
@@ -287,26 +300,31 @@ static inline void physics_add_static_collision(uint8_t index, uint8_t other)
 
     // Decrease the size of the dynamic_boundary since it shouldn't be
     // allowed to go through the static entity:
-    if (impulse[2] != 0.f)
-    {   // z interaction
-        if (impulse[2] > 0.f)
-            dynamic_boundary->corner_min[2] += impulse[2];
-        else
-            dynamic_boundary->corner_max[2] += impulse[2];
-    }
-    else if (impulse[0] != 0.f)
-    {   // x interaction
-        if (impulse[0] > 0.f)
-            dynamic_boundary->corner_min[0] += impulse[0];
-        else
-            dynamic_boundary->corner_max[0] += impulse[0];
+    if (collision->impulse.direction % 2)
+    {   // impulse is in a negative direction
+        static_assert(DirectionMinusX % 2 == 1);
+        static_assert(DirectionMinusY % 2 == 1);
+        static_assert(DirectionMinusZ % 2 == 1);
+        static_assert(DirectionMinusX / 2 == 0);
+        static_assert(DirectionMinusY / 2 == 1);
+        static_assert(DirectionMinusZ / 2 == 2);
+        // negative impulse means we need to reduce max boundary
+        // (reducing the min boundary would make the dynamic_boundary bigger):
+        dynamic_boundary->corner_max[collision->impulse.direction / 2]
+                -= collision->impulse.magnitude;
     }
     else
-    {   // y interaction
-        if (impulse[1] > 0.f)
-            dynamic_boundary->corner_min[1] += impulse[1];
-        else
-            dynamic_boundary->corner_max[1] += impulse[1];
+    {   // impulse is in a positive direction
+        static_assert(DirectionPlusX % 2 == 0);
+        static_assert(DirectionPlusY % 2 == 0);
+        static_assert(DirectionPlusZ % 2 == 0);
+        static_assert(DirectionPlusX / 2 == 0);
+        static_assert(DirectionPlusY / 2 == 1);
+        static_assert(DirectionPlusZ / 2 == 2);
+        // positive impulse means we need to increase min boundary
+        // (increasing the max boundary would make the dynamic_boundary bigger):
+        dynamic_boundary->corner_min[collision->impulse.direction / 2]
+                += collision->impulse.magnitude;
     }
 }
 
@@ -318,9 +336,8 @@ static inline void physics_add_dynamic_collision(uint8_t index, uint8_t other)
     ASSERT(other < MAX_PHYSICS_OBJECTS);
     uint8_t collision = physics_add_generic_collision(index, other);
     if (!collision) return;
-    // See what sort of impulse it would require to remove the object from the static:
-    boundary_get_impulse
-    (   physics_collision[collision].impulse,
+    collision_get_impulse
+    (   &physics_collision[collision],
         &physics_object[index].entity.boundary,
         &physics_static.entity[other].boundary
     );
@@ -388,14 +405,42 @@ void physics_frame()
                 physics_add_dynamic_collision(index, other);
         );
 
-        // TODO: adjust the velocity based on impulses from all static objects
-        // TODO: give crush damage when two static things are pushing together on you
+        // Adjust velocity based on impulses from all static objects:
+        if (physics_object[index].all_collisions)
+        {   // there is some collision here
+            float impulse[DirectionCount] = {0.f};
+            for (int i = 0; i < 4; ++i)
+            if (physics_object[index].collision[i])
+            {   physics_collision_t *collision = &physics_collision[physics_object[index].collision[i]];
+                uint8_t other = collision->index2;
+                // ignore dynamic objects for now, let users adjust velocity based on hits:
+                if (other < MAX_PHYSICS_OBJECTS)
+                    continue;
+                // this was a static object
+                ASSERT(collision->impulse.direction < DirectionCount);
+                if (impulse[collision->impulse.direction] < collision->impulse.magnitude)
+                    impulse[collision->impulse.direction] = collision->impulse.magnitude;
+                /* TODO: add friction based on impulse[collision->impulse.direction] (i.e., normal force)
+                other -= MAX_PHYSICS_OBJECTS;
+                */
+            }
+            // TODO: give crush damage when two static things are pushing together on you
+            // Don't allow crush damage for now:
+            ASSERT(impulse[DirectionPlusX] == 0.f || impulse[DirectionMinusX] == 0.f);
+            ASSERT(impulse[DirectionPlusY] == 0.f || impulse[DirectionMinusY] == 0.f);
+            ASSERT(impulse[DirectionPlusZ] == 0.f || impulse[DirectionMinusZ] == 0.f);
+            // TODO: allow for delta_t
+            float *velocity = physics_object[index].entity.velocity;
+            velocity[0] += impulse[DirectionPlusX] - impulse[DirectionMinusX];
+            velocity[1] += impulse[DirectionPlusY] - impulse[DirectionMinusY];
+            velocity[2] += impulse[DirectionPlusZ] - impulse[DirectionMinusZ];
 
-        // TODO: check if snapping to max or min still allows you to fill up the correct size.
-        // i.e., if a static object is moving into you and decreasing your boundary volume,
-        // while you are moving away from the static object (but not as fast), your snap-to will
-        // be on the side away from the static object, which means that snapping there could clip
-        // you into the object.
+            // TODO: check if snapping to max or min still allows you to fill up the correct size.
+            // i.e., if a static object is moving into you and decreasing your boundary volume,
+            // while you are moving away from the static object (but not as fast), your snap-to would
+            // be on the side away from the static object, which means that snapping there would 
+            // still clip you into the object.
+        }
         physics_entity_move_postframe(&physics_object[index].entity);
     );
 }
