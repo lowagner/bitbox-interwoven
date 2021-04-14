@@ -7,6 +7,7 @@
 #include "game.h"
 #include "io.h"
 #include "name.h"
+#include "sprite.h"
 
 #include <stdlib.h> // rand
 
@@ -55,35 +56,13 @@ void editSong_init()
 }
 
 void editSong_start(int load_song)
-{   // Set the palette to something reasonable.
-    // TODO: maybe have this logic in a palette.c...
-    static const uint16_t colors[16] = {
-        RGB(0, 0, 0),
-        RGB(157, 157, 157),
-        (1<<15) - 1,
-        RGB(224, 111, 139),
-        RGB(190, 38, 51),
-        RGB(235, 137, 49),
-        RGB(164, 100, 34),
-        RGB(73, 60, 43),
-        RGB(247, 226, 107),
-        RGB(163, 206, 39),
-        RGB(68, 137, 26),
-        RGB(47, 72, 78),
-        RGB(178, 220, 239),
-        RGB(49, 162, 242),
-        RGB(0, 87, 132),
-        RGB(28, 20, 40),
-    };
-    memcpy(game_palette, colors, sizeof(colors));
-    if (load_song)
+{   if (load_song)
     {   editSong_save_or_load_all(IoEventLoad);
     }
 }
 
 void editSong_load_default()
-{
-    song_length = 16;
+{   song_length = 16;
     song_speed = 4;
     chip_track_length = 32;
 }
@@ -95,7 +74,7 @@ void editSong_render(uint8_t value, int x, int y)
     uint32_t *dst = (uint32_t *)draw_buffer + x/2;
     uint8_t row = (font[hex_character[value]] >> (((y/2)*4))) & 15;
     uint32_t color_choice[2];
-    color_choice[0] = game_palette[value] | (game_palette[value]<<16);
+    color_choice[0] = sprite_palette[value] | (sprite_palette[value]<<16);
     color_choice[1] = ~color_choice[0];
     *(++dst) = color_choice[0];
     *(++dst) = color_choice[0];
@@ -236,7 +215,7 @@ void editSong_line()
                     uint8_t command = ((*(++value))>>(4*i))&15;
                     uint8_t row = (font[hex_character[command]] >> y) & 15;
                     uint32_t color_choice[2];
-                    color_choice[0] = game_palette[command] | (game_palette[command]<<16);
+                    color_choice[0] = sprite_palette[command] | (sprite_palette[command]<<16);
                     color_choice[1] = ~color_choice[0];
 
                     *(++dst) = color_choice[0];
@@ -251,7 +230,7 @@ void editSong_line()
 
                     command = ((*(++value))>>(4*i))&15;
                     row = (font[hex_character[command]] >> y) & 15;
-                    color_choice[0] = game_palette[command] | (game_palette[command]<<16);
+                    color_choice[0] = sprite_palette[command] | (sprite_palette[command]<<16);
                     color_choice[1] = ~color_choice[0];
                     *(++dst) = color_choice[0];
                     *(++dst) = color_choice[0];

@@ -15,12 +15,6 @@ uint8_t gamepad_press_wait CCM_MEMORY;
 game_mode_t game_mode CCM_MEMORY; 
 game_mode_t previous_game_mode CCM_MEMORY;
 
-// Each sprite has access to 16 colors of the global palette based on a uint8_t offset,
-// E.g. palette_offset = 0 means that the sprite uses palette colors from 0 to 15,
-//      palette_offset = 230 means the sprite uses colors from 230 to 245.
-// The index into the palette should not be a u8, however, since a palette_offset of 255
-// should allow you to get all the way to palette index 270.
-uint16_t game_palette[255 + 15 + 1] CCM_MEMORY;
 uint8_t game_message[32] CCM_MEMORY;
 int game_message_timeout CCM_MEMORY;
 

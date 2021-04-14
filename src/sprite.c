@@ -2,13 +2,38 @@
 #include "game.h"
 #include "sprite.h"
 
+#include <assert.h>
 #include <stdlib.h> // rand
 
+uint16_t sprite_palette[16] CCM_MEMORY;
 struct sprite sprite[MAX_SPRITES] CCM_MEMORY;
 
 void sprite_init()
 {   // setup the sprites to have the correct free linked list.
     LL_RESET(sprite, next_to_draw, previous_to_draw, MAX_SPRITES);
+    static_assert(ShapeCount <= 256);
+    static_assert(MAX_SPRITES <= 256);
+
+    // Set the palette to something reasonable.
+    static const uint16_t colors[16] = {
+        RGB(0, 0, 0),
+        RGB(157, 157, 157),
+        (1<<15) - 1,
+        RGB(224, 111, 139),
+        RGB(190, 38, 51),
+        RGB(235, 137, 49),
+        RGB(164, 100, 34),
+        RGB(73, 60, 43),
+        RGB(247, 226, 107),
+        RGB(163, 206, 39),
+        RGB(68, 137, 26),
+        RGB(47, 72, 78),
+        RGB(178, 220, 239),
+        RGB(49, 162, 242),
+        RGB(0, 87, 132),
+        RGB(28, 20, 40),
+    };
+    memcpy(sprite_palette, colors, sizeof(colors));
 }
 
 uint8_t sprite_new()
@@ -97,7 +122,7 @@ void sprite_line()
 
     // check to remove sprites first, since that will make the list smaller when adding to it
     uint8_t visible = sprite[0].next_visible;
-    int16_t vga16 = vga_line;
+    const int16_t vga16 = vga_line;
     while (visible)
     {   int bottom16 = sprite[visible].iy + sprite[visible].height;
         if (vga16 >= bottom16)
@@ -134,15 +159,35 @@ void sprite_line()
     sprite[0].check_next_for_visible = check_next_for_visible;
 
     // actually draw the sprites that are visible on this vga_line:
-    visible = sprite[0].next_visible;
-    while (visible)
-    {   // draw sprite[visible]:
+    uint16_t colors[2];
+    LL_ITERATE(sprite, next_visible, index, 0,
         // TODO: generate a landscape z-order before this frame, maybe for every "tile" (e.g. every 16 pixels)
-        // let this function draw the sprites.
-        // TODO: actually draw this sprite.
-
-        visible = sprite[visible].next_visible;
-    }
+        sprite_t *visible_sprite = &sprite[index];
+        colors[0] = sprite_palette[sprite->colors & 15];
+        colors[1] = sprite_palette[sprite->colors >> 4];
+        uint8_t sprite_y = vga16 - sprite->iy;
+        ASSERT(sprite_y >= 0 && sprite_y < sprite->height);
+        uint16_t *dst = draw_buffer + sprite->ix;
+        uint16_t *max_dst = dst + sprite->width;
+        if (dst < draw_buffer)
+            dst = draw_buffer;
+        if (max_dst > draw_buffer + SCREEN_W)
+            max_dst = draw_buffer + SCREEN_W;
+        ASSERT(dst < max_dst);
+        switch (visible_sprite->shape)
+        {   case Rectangle_TopHalfBottomHalf:
+                if (sprite_y < sprite->height / 2)
+                while (dst < max_dst)
+                    *dst++ = colors[0];
+                else
+                while (dst < max_dst)
+                    *dst++ = colors[1];
+                break;
+            default:
+                // Ignore
+                break;
+        }
+    );
 }
 
 static inline float sprite_compare(uint8_t index1, uint8_t index2)

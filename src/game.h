@@ -44,7 +44,6 @@ extern game_mode_t previous_game_mode;
 void game_switch(game_mode_t new_game_mode);
 void game_switch_to_previous_or(game_mode_t new_game_mode);
 
-extern uint16_t game_palette[255 + 15 + 1];
 extern uint8_t game_message[32];
 extern int game_message_timeout;
 
