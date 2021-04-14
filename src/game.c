@@ -1,5 +1,6 @@
 #include "bitbox.h"
 #include "chip.h"
+#include "debug-sprite.h"
 #include "edit-instrument.h"
 #include "edit-song.h"
 #include "edit-track.h"
@@ -61,6 +62,9 @@ void game_frame()
         case ModeEditInstrument:
             editInstrument_controls();
             break;
+        case ModeDebugSprite:
+            debugSprite_controls();
+            break;
         default:
             break;
     }
@@ -114,6 +118,9 @@ void graph_line()
         case ModeEditInstrument:
             editInstrument_line();
             break;
+        case ModeDebugSprite:
+            debugSprite_line();
+            break;
         default:
             bsod_line();
             break;
@@ -143,6 +150,9 @@ void game_switch(game_mode_t new_game_mode)
             break;
         case ModeEditSong:
             editSong_start(previous_game_mode == ModeNameSong);
+            break;
+        case ModeDebugSprite:
+            debugSprite_reset();
             break;
         default:
             break;

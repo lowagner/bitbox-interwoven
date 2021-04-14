@@ -37,6 +37,7 @@ typedef enum {
     ModeEditInstrument,
     ModeEditSong,
     ModeEditTrack,
+    ModeDebugSprite,
 } game_mode_t;
 
 extern game_mode_t game_mode;

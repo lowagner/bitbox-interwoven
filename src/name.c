@@ -126,6 +126,10 @@ void name_line()
         case 11:
             font_render_line_doubled((const uint8_t *)"start:finish", 16, delta_y, 65535, BG_COLOR*257);
             break;
+        case 12:
+            if (GAMEPAD_HOLDING(0, select))
+                font_render_line_doubled((const uint8_t *)"select+\x7f:debug", 16, delta_y, 65535, BG_COLOR*257);
+            break;
         default:
             if (row > 6)
                 break;
@@ -245,6 +249,15 @@ static inline void name_insert_character()
 
 void name_controls()
 {   // Checks user input
+    if (GAMEPAD_PRESS(0, start))
+    {   game_switch(name_mode_after_naming);
+        return;
+    }
+    if (GAMEPAD_HOLDING(0, select))
+    {   if (GAMEPAD_PRESS(0, down))
+            game_switch(ModeDebugSprite);
+        return;
+    }
 
     int make_wait = 0;
     if (GAMEPAD_PRESSING(0, left))
@@ -313,8 +326,5 @@ void name_controls()
             ++name_position;
         game_message[0] = 0;
         return;
-    }
-    if (GAMEPAD_PRESS(0, select) || GAMEPAD_PRESS(0, start))
-    {   game_switch(name_mode_after_naming);
     }
 }
