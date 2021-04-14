@@ -775,11 +775,11 @@ void editTrack_line()
                 font_render_line_doubled((uint8_t *)"start:track menu", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 17:
-            font_render_line_doubled((uint8_t *)"select:special", 16, internal_line, 65535, BG_COLOR*257);
+            font_render_line_doubled((uint8_t *)"select:special", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 18:
             if (GAMEPAD_HOLDING(0, select))
-                font_render_line_doubled((uint8_t *)"> inst < song ^ up", 20, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"> inst < song ^ up", 100, internal_line, 65535, BG_COLOR*257);
             break;
         case 19:
             break;

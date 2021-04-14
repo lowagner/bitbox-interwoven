@@ -168,15 +168,9 @@ static void editInstrument_short_command_message(uint8_t *buffer, uint8_t cmd)
 }
 
 void editInstrument_render_command(int j, int y)
-{
+{   ASSERT(j >= 0 && j < 16);
+    ASSERT(y >= 0 && y < 8);
     int x = 32;
-    #ifdef EMULATOR
-    if (y < 0 || y >= 8)
-    {
-        message("got too big a line count for instrument %d, %d\n", (int)editInstrument_instrument, y);
-        return;
-    }
-    #endif
     
     uint8_t cmd = instrument[editInstrument_instrument].cmd[j];
     uint8_t param = cmd>>4;
@@ -989,11 +983,11 @@ void editInstrument_line()
                 font_render_line_doubled((uint8_t *)"start:instrument menu", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_instrument;
         case 18:
-            font_render_line_doubled((uint8_t *)"select:special", 16, internal_line, 65535, BG_COLOR*257);
+            font_render_line_doubled((uint8_t *)"select:special", 96, internal_line, 65535, BG_COLOR*257);
             break;
         case 19:
             if (GAMEPAD_HOLDING(0, select))
-                font_render_line_doubled((uint8_t *)"> song < track ^ up", 20, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"> song < track ^ up", 100, internal_line, 65535, BG_COLOR*257);
             break;
         default:
           maybe_show_instrument:
