@@ -775,15 +775,13 @@ void editTrack_line()
                 font_render_line_doubled((uint8_t *)"start:track menu", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 17:
-            if (music_editor_in_menu)
-                font_render_line_doubled((uint8_t *)"select:instrument menu", 96, internal_line, 65535, BG_COLOR*257);
-            else
-                font_render_line_doubled((uint8_t *)"select:edit instrument", 96, internal_line, 65535, BG_COLOR*257);
+            font_render_line_doubled((uint8_t *)"select:special", 16, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 18:
+            if (GAMEPAD_HOLDING(0, select))
+                font_render_line_doubled((uint8_t *)"> inst < song ^ up", 20, internal_line, 65535, BG_COLOR*257);
             break;
         case 19:
-            font_render_line_doubled(game_message, 36, internal_line, 65535, BG_COLOR*257);
             break;
         default:
           maybe_show_track:
@@ -794,7 +792,17 @@ void editTrack_line()
 }
 
 void editTrack_controls()
-{
+{   if (GAMEPAD_HOLDING(0, select))
+    {   game_message[0] = 0;
+        if (GAMEPAD_PRESS(0, up))
+            game_switch(ModeNameSong);
+        else if (GAMEPAD_PRESS(0, left))
+            game_switch(ModeEditSong);
+        else if (GAMEPAD_PRESS(0, right))
+            game_switch(ModeEditInstrument);
+        return;
+    }
+
     if (music_editor_in_menu)
     {   int switched = 0;
         if (GAMEPAD_PRESSING(0, left))
@@ -806,7 +814,7 @@ void editTrack_controls()
             editTrack_menu_index =
             (   editTrack_menu_index + switched + EditTrackMenuMax
             ) % EditTrackMenuMax;
-            gamepad_press_wait = GAMEPAD_PRESS_WAIT;
+            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
             return;
         }
         if (GAMEPAD_PRESSING(0, down))
@@ -836,7 +844,7 @@ void editTrack_controls()
                         chip_track_length = 16;
                     break;
             }
-            gamepad_press_wait = GAMEPAD_PRESS_WAIT;
+            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
             return;
         }
         
@@ -852,7 +860,7 @@ void editTrack_controls()
             editTrack_track = (editTrack_track+switched)&(MAX_TRACKS - 1);
             editTrack_pos = 0;
             editTrack_offset = 0;
-            gamepad_press_wait = GAMEPAD_PRESS_WAIT;
+            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
             return;
         }
 
@@ -889,7 +897,7 @@ void editTrack_controls()
                 editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
             }
             else
-            {
+            {   // TODO: remove and use select + up
                 // switch to choose name and hope to come back
                 game_message[0] = 0;
                 game_switch(ModeNameSong);
@@ -983,7 +991,7 @@ void editTrack_controls()
         }
         if (movement)
         {
-            gamepad_press_wait = GAMEPAD_PRESS_WAIT;
+            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
             return;
         }
 

@@ -22,11 +22,12 @@
 
 #define GAMEPAD_PRESS_WAIT 8
 #define GAMEPAD_PRESS(id, key) ((gamepad_buttons[id]) & (~old_gamepad[id]) & (gamepad_##key))
-#define GAMEPAD_PRESSING(id, key) ((gamepad_buttons[id]) & (gamepad_##key) & (~old_gamepad[id] | ((gamepad_press_wait == 0)*gamepad_##key)))
+#define GAMEPAD_PRESSING(id, key) ((gamepad_buttons[id]) & (gamepad_##key) & (~old_gamepad[id] | ((gamepad_press_wait[id] == 0)*gamepad_##key)))
+#define GAMEPAD_HOLDING(id, key) (gamepad_buttons[id] & (gamepad_##key))
 
 extern uint16_t new_gamepad[2];
 extern uint16_t old_gamepad[2];
-extern uint8_t gamepad_press_wait;
+extern uint8_t gamepad_press_wait[2];
 
 typedef enum {
     ModeNone=0,

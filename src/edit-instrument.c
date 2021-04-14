@@ -989,13 +989,11 @@ void editInstrument_line()
                 font_render_line_doubled((uint8_t *)"start:instrument menu", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_instrument;
         case 18:
-            if (music_editor_in_menu)
-                font_render_line_doubled((uint8_t *)"select:song menu", 96, internal_line, 65535, BG_COLOR*257);
-            else
-                font_render_line_doubled((uint8_t *)"select:edit song", 96, internal_line, 65535, BG_COLOR*257);
+            font_render_line_doubled((uint8_t *)"select:special", 16, internal_line, 65535, BG_COLOR*257);
             break;
         case 19:
-            font_render_line_doubled(game_message, 36, internal_line, 65535, BG_COLOR*257);
+            if (GAMEPAD_HOLDING(0, select))
+                font_render_line_doubled((uint8_t *)"> song < track ^ up", 20, internal_line, 65535, BG_COLOR*257);
             break;
         default:
           maybe_show_instrument:
@@ -1021,7 +1019,7 @@ static inline void editInstrument_menu_controls()
     if (moved)
     {
         game_message[0] = 0;
-        gamepad_press_wait = GAMEPAD_PRESS_WAIT;
+        gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
         if (editInstrument_cursor) // drums
         {
             if (instrument[editInstrument_instrument].is_drum) 
@@ -1100,6 +1098,7 @@ static inline void editInstrument_menu_controls()
         }
         else
         {   // switch to choose name and hope to come back
+            // TODO: remove and use select + up
             game_message[0] = 0;
             game_switch(ModeNameSong);
         }
@@ -1116,7 +1115,7 @@ static inline void editInstrument_menu_controls()
         game_message[0] = 0;
         editInstrument_instrument = (editInstrument_instrument + moved)&15;
         editInstrument_cmd_index = 0;
-        gamepad_press_wait = GAMEPAD_PRESS_WAIT*2;
+        gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT*2;
         return;
     }
 }
@@ -1214,7 +1213,7 @@ static inline void editInstrument_edit_controls()
     }
     if (movement)
     {
-        gamepad_press_wait = GAMEPAD_PRESS_WAIT;
+        gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
         return;
     }
 
@@ -1319,7 +1318,18 @@ static inline void editInstrument_edit_controls()
 }
 
 void editInstrument_controls()
-{
+{   if (GAMEPAD_HOLDING(0, select))
+    {   // Switch to editing tracks.
+        game_message[0] = 0;
+        if (GAMEPAD_PRESS(0, up))
+            game_switch(ModeNameSong);
+        else if (GAMEPAD_PRESS(0, left))
+            game_switch(ModeEditTrack);
+        else if (GAMEPAD_PRESS(0, right))
+            game_switch(ModeEditSong);
+        return;
+    }
+
     if (GAMEPAD_PRESS(0, start))
     {
         if (game_message[0] == 's' || game_message[0] == 'l')

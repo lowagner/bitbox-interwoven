@@ -10,7 +10,7 @@
 
 uint16_t new_gamepad[2] CCM_MEMORY;
 uint16_t old_gamepad[2] CCM_MEMORY;
-uint8_t gamepad_press_wait CCM_MEMORY;
+uint8_t gamepad_press_wait[2] CCM_MEMORY;
 
 game_mode_t game_mode CCM_MEMORY; 
 game_mode_t previous_game_mode CCM_MEMORY;
@@ -68,8 +68,10 @@ void game_frame()
     old_gamepad[0] = gamepad_buttons[0];
     old_gamepad[1] = gamepad_buttons[1];
     
-    if (gamepad_press_wait)
-        --gamepad_press_wait;
+    if (gamepad_press_wait[0])
+        --gamepad_press_wait[0];
+    if (gamepad_press_wait[1])
+        --gamepad_press_wait[1];
     
     if (game_message_timeout && --game_message_timeout == 0)
         game_message[0] = 0; 
@@ -122,6 +124,8 @@ void game_switch(game_mode_t new_game_mode)
 {   // Switches to a new game mode.  Does nothing if already in that mode.
     if (new_game_mode == game_mode)
         return;
+    // don't let things trigger again if possible
+    gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
 
     chip_kill();
 
