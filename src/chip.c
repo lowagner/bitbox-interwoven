@@ -448,6 +448,89 @@ void chip_play_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t volume)
     chip_instrument_for_next_note_for_player[p] = old_instrument;
 }
 
+static inline int chip_get_next_note_in_scale(const int *scale, int note, int direction)
+{   // pass in a note relative to the current scale (0 = 12 = root, 4 = major third, 7 = fifth)
+    // and you will get the next note up or down, based on direction.
+    // scale[i] should be > 0 and <= 12; it should increase until the last note which is a 12 (to indicate finish).
+    int octave = note / 12;
+    note = note % 12;
+    // ensure that scale[i] == 12 at the end of the input:
+    ASSERT(scale[1] == 12 || scale[2] == 12 || scale[3] == 12 || scale[4] == 12 || scale[5] == 12 || scale[6] == 12);
+    if (direction > 0)
+    while (1)
+    {   // get first note in scale that is greater than note and return it.
+        int scale_note = *scale++;
+        if (scale_note > note)
+        {   note = scale_note;
+            break;
+        }
+    }
+    else
+    {   // get last note in scale that is smaller than note and return it.
+        if (note == 0)
+        {   // at the bottom of the scale we need to think of note as the top of the next-lower octave:
+            note = 12;
+            --octave;
+        }
+        int previous_note = 0;
+        while (1)
+        {   int scale_note = *scale++;
+            if (scale_note >= note)
+            {   note = previous_note;
+                break;
+            }
+            previous_note = scale_note;
+        }
+    }
+    return 12 * octave + note;
+}
+
+static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
+{   int high_note = chip_player[p].track_arp_high_note;
+    int low_note = chip_player[p].track_arp_low_note;
+    int delta_high_low = high_note - low_note;
+    int note = chip_player[p].track_note;
+    if (delta_high_low <= 0)
+    {   // high/low are backwards and unreliable, just jump between high and low:
+        return note == low_note ? high_note : low_note;
+    }
+    // Make sure note is within range as well, use wrapping when getting to a boundary:
+    if (note < low_note || (note == low_note && direction < 0))
+        return high_note;
+    if (note > high_note || (note == high_note && direction > 0))
+        return low_note;
+    // delta_high_low > 0 and low_note <= (current) note <= high_note, and
+    // if the current note is at the boundary, it is coming away from it.
+    int root;
+    switch (chip_player[p].track_arp_scale)
+    {   case ScaleMajorTriad:
+            // TODO: do this with a generic scale parser:
+            switch (delta_high_low % 12)
+            {   case 8: // inversion, bass starts on the major third
+                    root = low_note - 4;
+                    break;
+                case 5: // inversion, bass starts on the fifth
+                    root = low_note - 7;
+                    break;
+                default: // unknown, assume bass note is same as low note
+                    root = low_note;
+                    break;
+            }
+            {   int scale[] = {4, 7, 12}; // major triad mod 12, with 12 at end
+                note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            }
+            break;
+        case ScaleChromatic:
+            note += direction;
+            break;
+    }
+    if (note < low_note)
+        return low_note;
+    if (note > high_note)
+        return high_note;
+    return note;
+}
+
 static void track_run_command(uint8_t i, uint8_t cmd) 
 {   // Run a command for player i on their track.
     uint8_t param = cmd >> 4;
@@ -534,16 +617,10 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                     note = chip_player[i].track_arp_high_note;
                     break;
                 case ArpPlayNextNoteDown:
-                    note = chip_player[i].track_note;
-                    // TODO based on scale:
-                    if (--note < chip_player[i].track_arp_low_note)
-                        note = chip_player[i].track_arp_low_note;
+                    note = chip_player_get_next_arp_note(i, -1);
                     break;
                 case ArpPlayNextNoteUp:
-                    note = chip_player[i].track_note;
-                    // TODO based on scale.
-                    if (++note > chip_player[i].track_arp_high_note)
-                        note = chip_player[i].track_arp_high_note;
+                    note = chip_player_get_next_arp_note(i, +1);
                     break;
             }
             else
@@ -555,7 +632,7 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             break;
         }
         case TrackArpScale:
-        {   // TODO:
+        {   chip_player[i].track_arp_scale = param;
             break;
         }
         case TrackVibrato: // ~ = vibrato depth
@@ -1082,3 +1159,43 @@ void game_snd_buffer(uint16_t* buffer, int len)
     for (int i=0; i<len; i++)
         buffer[i] = gen_sample();
 }
+
+#ifdef EMULATOR
+void test_chip()
+{   {   // next note in random scale
+        int scale[] = {4, 7, 9, 10, 12};
+        // first octave:
+        ASSERT(chip_get_next_note_in_scale(scale, 0, +1) == 4);
+        ASSERT(chip_get_next_note_in_scale(scale, 3, +1) == 4);
+        ASSERT(chip_get_next_note_in_scale(scale, 4, +1) == 7);
+        ASSERT(chip_get_next_note_in_scale(scale, 6, +1) == 7);
+        ASSERT(chip_get_next_note_in_scale(scale, 9, +1) == 10);
+        ASSERT(chip_get_next_note_in_scale(scale, 10, +1) == 12);
+        // second octave:
+        ASSERT(chip_get_next_note_in_scale(scale, 12 + 0, +1) == 12 + 4);
+        ASSERT(chip_get_next_note_in_scale(scale, 12 + 7, +1) == 12 + 9);
+        ASSERT(chip_get_next_note_in_scale(scale, 12 + 9, +1) == 12 + 10);
+        // random (fourth) octave:
+        ASSERT(chip_get_next_note_in_scale(scale, 3*12 + 0, +1) == 3*12 + 4);
+        ASSERT(chip_get_next_note_in_scale(scale, 3*12 + 10, +1) == 3*12 + 12);
+    }
+    {   // previous note in random scale
+        int scale[] = {3, 4, 5, 10, 12};
+        // Can go negative:
+        ASSERT(chip_get_next_note_in_scale(scale, 0, -1) == -2);
+        ASSERT(chip_get_next_note_in_scale(scale, 3, -1) == 0);
+        ASSERT(chip_get_next_note_in_scale(scale, 4, -1) == 3);
+        ASSERT(chip_get_next_note_in_scale(scale, 6, -1) == 5);
+        ASSERT(chip_get_next_note_in_scale(scale, 9, -1) == 5);
+        ASSERT(chip_get_next_note_in_scale(scale, 10, -1) == 5);
+        // second octave:
+        ASSERT(chip_get_next_note_in_scale(scale, 12, -1) == 10);
+        ASSERT(chip_get_next_note_in_scale(scale, 12 + 3, -1) == 12 + 0);
+        ASSERT(chip_get_next_note_in_scale(scale, 12 + 5, -1) == 12 + 4);
+        ASSERT(chip_get_next_note_in_scale(scale, 12 + 9, -1) == 12 + 5);
+        // random (fifth) octave
+        ASSERT(chip_get_next_note_in_scale(scale, 4*12 + 9, -1) == 4*12 + 5);
+        ASSERT(chip_get_next_note_in_scale(scale, 4*12 + 12, -1) == 4*12 + 10);
+    }
+}
+#endif

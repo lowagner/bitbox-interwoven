@@ -48,6 +48,9 @@ typedef enum
     WfRed, // = "integral" of WfNoise, mixes with WfNoise when duty is not default
     WfViolet, // = "derivative" of WfNoise, mixes with WfNoise when duty is not default
     WfRedViolet, // waveform flips between Red and Violet based on phase/duty.
+
+    // Nothing 16 or above is allowed
+    WfMaxUnused = 16,
 } chip_wf_t;
 
 // TODO: double check our order is ok:
@@ -69,6 +72,7 @@ typedef enum
     InstrumentRandomize = 14,
     InstrumentJump = 15,
     // Nothing 16 or above is allowed
+    InstrumentMaxUnused = 16,
 } chip_inst_cmd_t;
 
 typedef enum
@@ -125,6 +129,7 @@ typedef enum
             = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadeNegativeVolumeD,
     InstrumentFadeWrapRaisingVolumeWithPositiveVolumeD
             = 2 * InstrumentFadeWrapRaisingVolume + InstrumentFadePositiveVolumeD,
+    InstrumentFadeMaxUnused = 16,
 } chip_inst_fade_behavior_t;
 
 typedef enum
@@ -157,11 +162,17 @@ typedef enum
     TrackRandomize = 14,
     TrackJump = 15,
     // Nothing 16 or above is allowed
+    TrackMaxUnused = 16,
 } chip_track_cmd_t;
 
 typedef enum
-{   ScaleChromatic = 0,
+{   ScaleMajorTriad,
+
+    ScaleOctaves = 13,
+    ScaleFifths = 14,
+    ScaleChromatic = 15,
     // Nothing 16 or above is allowed
+    ScaleMaxUnused = 16,
 } chip_scale_t;
 
 typedef enum
@@ -171,6 +182,7 @@ typedef enum
     ArpPlayNextNoteDown = 14,
     ArpPlayNextNoteUp = 15,
     // Nothing 16 or above is allowed
+    ArpPlayMaxUnused = 16,
 } chip_arp_note_t;
 
 // TODO: make song a list of song cmds, up to 128 commands long
@@ -221,6 +233,7 @@ typedef enum
     SongRandomize = 14,
     SongJump = 15,
     // Nothing 16 or above is allowed
+    SongMaxUnused = 16,
 } song_cmd_t;
 
 // TODO: just move into chip_player
