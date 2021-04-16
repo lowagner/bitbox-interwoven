@@ -651,6 +651,12 @@ void editTrack_line()
                         case ScaleMinorTriad:
                             msg = "minor \\ 3";
                             break;
+                        case ScaleSus4Triad:
+                            msg = "sus4 \\ 3";
+                            break;
+                        case ScaleSus2Triad:
+                            msg = "sus2 \\ 3";
+                            break;
                         case ScaleMajor7:
                             msg = "Maj7 \\ 4";
                             break;
@@ -662,6 +668,12 @@ void editTrack_line()
                             break;
                         case ScaleDiminished7:
                             msg = "dim7 \\ 4";
+                            break;
+                        case ScaleAugmentedTriad:
+                            msg = "aug \\ 3";
+                            break;
+                        case ScaleAugmented7:
+                            msg = "aug7 \\ 4";
                             break;
                         case ScaleFifths:
                             msg = "fifths \\ 2";
