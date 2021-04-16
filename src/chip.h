@@ -159,20 +159,23 @@ typedef enum
 typedef enum
 {   ScaleMajorTriad,
     ScaleMinorTriad,
-    ScaleSus4Triad,
-    ScaleSus2Triad,
-
     ScaleMajor7,
     ScaleMinor7,
-    ScaleDominant7,
-    ScaleDiminished7,
+
+    ScaleSuspended4Triad,
+    ScaleSuspended2Triad,
+    ScaleMajor6,
+    ScaleMinor6,
 
     ScaleAugmentedTriad,
+    ScaleDiminishedTriad,
     ScaleAugmented7,
+    ScaleDiminished7,
 
-    ScaleFifths = 13,
-    ScaleOctaves = 14,
-    ScaleChromatic = 15,
+    ScaleFifths,
+    ScaleOctaves,
+    ScaleDominant7,
+    ScaleChromatic,
     // Nothing 16 or above is allowed
     ScaleMaxUnused = 16,
 } chip_scale_t;

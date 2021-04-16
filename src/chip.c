@@ -569,18 +569,6 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
         }
-        case ScaleSus4Triad:
-        {   int scale[] = {5, 7, 12}; // ensure having 12 at end
-            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
-            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
-            break;
-        }
-        case ScaleSus2Triad:
-        {   int scale[] = {2, 7, 12}; // ensure having 12 at end
-            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
-            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
-            break;
-        }
         case ScaleMajor7:
         {   int scale[] = {4, 7, 11, 12}; // ensure having 12 at end
             root = chip_try_finding_root_in_scale(scale, low_note, high_note);
@@ -593,14 +581,26 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
         }
-        case ScaleDominant7:
-        {   int scale[] = {4, 7, 10, 12}; // ensure having 12 at end
+        case ScaleSuspended4Triad:
+        {   int scale[] = {5, 7, 12}; // ensure having 12 at end
             root = chip_try_finding_root_in_scale(scale, low_note, high_note);
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
         }
-        case ScaleDiminished7:
-        {   int scale[] = {3, 6, 9, 12}; // ensure having 12 at end
+        case ScaleSuspended2Triad:
+        {   int scale[] = {2, 7, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleMajor6:
+        {   int scale[] = {4, 7, 9, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleMinor6:
+        {   int scale[] = {3, 7, 9, 12}; // ensure having 12 at end
             root = chip_try_finding_root_in_scale(scale, low_note, high_note);
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
@@ -611,8 +611,20 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
         }
+        case ScaleDiminishedTriad:
+        {   int scale[] = {3, 6, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
         case ScaleAugmented7:
         {   int scale[] = {4, 8, 10, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleDiminished7:
+        {   int scale[] = {3, 6, 9, 12}; // ensure having 12 at end
             root = chip_try_finding_root_in_scale(scale, low_note, high_note);
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
@@ -626,6 +638,12 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
         case ScaleOctaves:
             note += 12 * direction;
             break;
+        case ScaleDominant7:
+        {   int scale[] = {4, 7, 10, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
         case ScaleChromatic:
             note += direction;
             break;

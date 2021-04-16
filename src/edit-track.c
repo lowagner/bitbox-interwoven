@@ -651,29 +651,35 @@ void editTrack_line()
                         case ScaleMinorTriad:
                             msg = "minor \\ 3";
                             break;
-                        case ScaleSus4Triad:
-                            msg = "sus4 \\ 3";
-                            break;
-                        case ScaleSus2Triad:
-                            msg = "sus2 \\ 3";
-                            break;
                         case ScaleMajor7:
                             msg = "Maj7 \\ 4";
                             break;
                         case ScaleMinor7:
                             msg = "min7 \\ 4";
                             break;
-                        case ScaleDominant7:
-                            msg = "Dom7 \\ 4";
+                        case ScaleSuspended4Triad:
+                            msg = "sus4 \\ 3";
                             break;
-                        case ScaleDiminished7:
-                            msg = "dim7 \\ 4";
+                        case ScaleSuspended2Triad:
+                            msg = "sus2 \\ 3";
+                            break;
+                        case ScaleMajor6:
+                            msg = "Maj6 \\ 4";
+                            break;
+                        case ScaleMinor6:
+                            msg = "min6 \\ 4";
                             break;
                         case ScaleAugmentedTriad:
                             msg = "aug \\ 3";
                             break;
+                        case ScaleDiminishedTriad:
+                            msg = "dim \\ 3";
+                            break;
                         case ScaleAugmented7:
                             msg = "aug7 \\ 4";
+                            break;
+                        case ScaleDiminished7:
+                            msg = "dim7 \\ 4";
                             break;
                         case ScaleFifths:
                             msg = "fifths \\ 2";
@@ -681,8 +687,11 @@ void editTrack_line()
                         case ScaleOctaves:
                             msg = "Octaves \\ 1";
                             break;
+                        case ScaleDominant7:
+                            msg = "Dom7 \\ 4";
+                            break;
                         case ScaleChromatic:
-                            msg = "Chromatic \\ 12";
+                            msg = "chromatic \\ 12";
                             break;
                         default:
                             msg = "??";
