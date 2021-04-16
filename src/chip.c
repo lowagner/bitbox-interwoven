@@ -677,7 +677,6 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                     note = chip_player[i].track_arp_low_note;
                     break;
                 case ArpPlayHighNote:
-                    // Technically this can be off the scale, but that can be fun:
                     note = chip_player[i].track_arp_high_note;
                     break;
                 case ArpPlayNextNoteDown:
@@ -696,9 +695,11 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             break;
         }
         case TrackArpScale:
-        {   chip_player[i].track_arp_scale = param;
+            chip_player[i].track_arp_scale = param;
             break;
-        }
+        case TrackArpWait:
+            chip_player[i].track_arp_wait = param + 1;
+            break;
         case TrackVibrato: // ~ = vibrato depth
             chip_player[i].track_vibrato_depth = (param&3)*3 + (param>3)*2;
             chip_player[i].track_vibrato_rate = 1 + (param & 12)/2;
@@ -711,10 +712,6 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             break;
         case TrackStatic:
             // TODO:
-            break;
-        case TrackSpecial:
-            // TODO: fancier things if param >= 4
-            chip_player[i].track_arp_wait = param + 1;
             break;
         case TrackRandomize:
         {

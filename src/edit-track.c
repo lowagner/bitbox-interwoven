@@ -73,6 +73,15 @@ void editTrack_short_command_message(uint8_t *buffer, uint8_t cmd)
         case TrackWait:
             strcpy((char *)buffer, "wait");
             break;
+        case TrackArpNote:
+            strcpy((char *)buffer, "arp. note");
+            break;
+        case TrackArpScale:
+            strcpy((char *)buffer, "arp. scale");
+            break;
+        case TrackArpWait:
+            strcpy((char *)buffer, "arp. wait");
+            break;
         case TrackInertia:
             strcpy((char *)buffer, "inertia");
             break;
@@ -84,9 +93,6 @@ void editTrack_short_command_message(uint8_t *buffer, uint8_t cmd)
             break;
         case TrackStatic:
             strcpy((char *)buffer, "static");
-            break;
-        case TrackSpecial:
-            strcpy((char *)buffer, "special");
             break;
         case TrackRandomize:
             strcpy((char *)buffer, "randomize");
@@ -254,6 +260,10 @@ void editTrack_render_command(int j, int y)
             // TODO:
             param = hex_character[param];
             break;
+        case TrackArpWait:
+            cmd = 'a';
+            param = hex_character[1 + param];
+            break;
         case TrackInertia:
             cmd = 'i';
             param = hex_character[param];
@@ -274,11 +284,6 @@ void editTrack_render_command(int j, int y)
             break;
         case TrackStatic:
             cmd = 'S'; 
-            param = hex_character[param];
-            break;
-        case TrackSpecial:
-            // TODO:
-            cmd = 'a';
             param = hex_character[param];
             break;
         case TrackRandomize:
@@ -577,6 +582,9 @@ void editTrack_line()
                 case TrackArpScale:
                     strcpy((char *)buffer, "arpeggio scale");
                     break;
+                case TrackArpWait:
+                    strcpy((char *)buffer, "arpeggio note length");
+                    break;
                 case TrackInertia:
                     strcpy((char *)buffer, "note inertia");
                     break;
@@ -588,9 +596,6 @@ void editTrack_line()
                     break;
                 case TrackStatic:
                     strcpy((char *)buffer, "track static");
-                    break;
-                case TrackSpecial:
-                    strcpy((char *)buffer, "track special");
                     break;
                 case TrackRandomize:
                     strcpy((char *)buffer, "randomize next cmd");
@@ -637,6 +642,30 @@ void editTrack_line()
                         font_render_line_doubled((const uint8_t *)msg, 120, internal_line, 65535, BG_COLOR*257);
                     break;
                 }
+                case TrackArpScale:
+                {   const char *msg;
+                    switch (param)
+                    {   case ScaleMajorTriad:
+                            msg = "Major 3";
+                            break;
+                        case ScaleMinorTriad:
+                            msg = "minor 3";
+                            break;
+                        case ScaleFifths:
+                            msg = "Fifths";
+                            break;
+                        case ScaleOctaves:
+                            msg = "Octaves";
+                            break;
+                        case ScaleChromatic:
+                            msg = "Chromatic";
+                            break;
+                        default:
+                            msg = "??";
+                    }
+                    font_render_line_doubled((const uint8_t *)msg, 120, internal_line, 65535, BG_COLOR*257);
+                    break;
+                }
                 case TrackVibrato:
                 {   uint8_t msg[16];
                     switch (param/4) // rate
@@ -659,9 +688,6 @@ void editTrack_line()
                     font_render_line_doubled(msg, 120, internal_line, 65535, BG_COLOR*257);
                     break;
                 }
-                case TrackSpecial:
-                    // TODO: add TrackSpecial help box based on param
-                    break;
             }
             goto maybe_show_track;
         }

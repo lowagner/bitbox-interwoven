@@ -145,18 +145,11 @@ typedef enum
     TrackArpNote = 7,
     // See chip_scale_t for the different scales:
     TrackArpScale = 8,
-    TrackInertia = 9,
-    TrackVibrato = 10, // Frequency oscillation
-    TrackBend = 11,
-    TrackStatic = 12,
-    // TODO: Execute next command if some condition holds, otherwise following.
-    // Argument provides the condition.
-    // TODO: show entire track, since jumps can go anywhere??
-    // 0 - Use a wait of 1 for Arpeggio notes
-    // 1 - Use a wait of 2 for Arpeggio notes
-    // 2 - Use a wait of 3 for Arpeggio notes
-    // 3 - Use a wait of 4 for Arpeggio notes
-    TrackSpecial = 13,
+    TrackArpWait = 9,
+    TrackInertia = 10,
+    TrackVibrato = 11, // Frequency oscillation
+    TrackBend = 12,
+    TrackStatic = 13,
     TrackRandomize = 14,
     TrackJump = 15,
     // Nothing 16 or above is allowed
