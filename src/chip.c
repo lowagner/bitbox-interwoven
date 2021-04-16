@@ -485,6 +485,65 @@ static inline int chip_get_next_note_in_scale(const int *scale, int note, int di
     return 12 * octave + note;
 }
 
+static inline int chip_try_finding_root_in_scale(const int *scale1, int low_note, int high_note)
+{   // given a scale and a difference between high and low (mod 12),
+    // find the root note that would be the key of that scale.
+    // e.g., if we're in major scale {4, 7, 12} and high_note == 12
+    //          if low_note == 4,
+    //              then return root = 0
+    //          if low_note == 7,
+    //              then return root = 0
+    // if we can't find anything meaningful, return low_note.
+
+    // if the high and low notes are octaves apart, then we wouldn't have any information to guess root
+    // besides the note itself.
+    int delta_high_low = (high_note - low_note) % 12;
+    if (delta_high_low == 0)
+        return low_note;
+
+    while (1)
+    {   // check what root note would satisfy 
+        //  * (low_note - root) % 12 == scale_noteA     (equation 1.A)
+        //  * (high_note - root) % 12 == scale_noteB    (equation 1.B)
+        // where (A, B) can be (1, 2) or (2, 1).
+        // expanding the modulus, low_note - root = 12*m + scale_noteA, for m an integer,
+        // so: root = low_note - scale_noteA + 12*n     # set n = -m, still an integer.
+        // choose `n` such that root is reasonable.
+        // we'll have to find a situation where
+        //  * (high_note - low_note) % 12 == (scale_note2 - scale_note1) % 12
+        // and then check to see if scale_noteA is related to scale_note1 or 2.
+        // i.e., set root = low_note - scale_note1 and see if equations 1.A,B are satisfied.
+        // i.e., otherwise try root = low_note - scale_note2.
+        // otherwise set root = low_note - scale_note2.
+
+        // check scale1 < scale2, so N^2 / 2 times around the loop
+        int scale_note1 = *scale1++;
+        if (scale_note1 == 12)
+            break;
+        const int *scale2 = scale1;
+        while (1)
+        {   int scale_note2 = *scale2++;
+            int delta12 = scale_note2 - scale_note1;
+            ASSERT(delta12 > 0 && delta12 < 12);
+            // since we only check scale1 < scale2, (scale_note2 - scale_note1) could theoretically
+            // be reversed for high/low notes, so check 12 - delta12 as an option as well.
+            // TODO: test that
+            if (delta12 == delta_high_low || (12 - delta12 == delta_high_low))
+            {   int try_root = low_note - scale_note2;
+                if ((high_note - try_root) % 12 == scale_note1) // scale_note1 is between 0 and 11
+                    return try_root;
+                try_root = low_note - scale_note1;
+                 // note the extra % 12; scale_note2 is between 1 and 12:
+                ASSERT((high_note - try_root) % 12 == scale_note2 % 12);
+                return try_root;
+            }
+            if (scale_note2 == 12)
+                break;
+        }
+    }
+    return low_note;
+}
+
 static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
 {   int high_note = chip_player[p].track_arp_high_note;
     int low_note = chip_player[p].track_arp_low_note;
@@ -504,22 +563,11 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
     int root;
     switch (chip_player[p].track_arp_scale)
     {   case ScaleMajorTriad:
-            // TODO: do this with a generic scale parser:
-            switch (delta_high_low % 12)
-            {   case 8: // inversion, bass starts on the major third
-                    root = low_note - 4;
-                    break;
-                case 5: // inversion, bass starts on the fifth
-                    root = low_note - 7;
-                    break;
-                default: // unknown, assume bass note is same as low note
-                    root = low_note;
-                    break;
-            }
-            {   int scale[] = {4, 7, 12}; // major triad mod 12, with 12 at end
-                note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
-            }
+        {   int scale[] = {4, 7, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
+        }
         case ScaleChromatic:
             note += direction;
             break;
@@ -1197,5 +1245,34 @@ void test_chip()
         ASSERT(chip_get_next_note_in_scale(scale, 4*12 + 9, -1) == 4*12 + 5);
         ASSERT(chip_get_next_note_in_scale(scale, 4*12 + 12, -1) == 4*12 + 10);
     }
+    {   // finding the root in a scale
+        int scale[] = {4, 7, 12};
+
+        for (int key = 0; key < 5; ++key)
+        {   // high note is "higher" than low note in the scale:
+            /// 4, 12
+            ASSERT(chip_try_finding_root_in_scale(scale, key + 4, 12+key + 12) == key);
+            /// 7, 12
+            ASSERT(chip_try_finding_root_in_scale(scale, 3*12+key + 7, 5*12+key + 12) == 3*12 + key);
+            /// 4, 7
+            ASSERT(chip_try_finding_root_in_scale(scale, 12+key + 4, 3*12+key + 7) == 12 + key);
+
+            // high note is "lower" than low note in the scale:
+            /// 12, 4 
+            // TODO: probably should equal key+12 and not key, but this is ok.
+            ASSERT(chip_try_finding_root_in_scale(scale, 12+key, 2*12+key + 4) == key);
+            /// 12, 7 
+            // TODO: probably should equal key and not key-12, but this is ok.
+            ASSERT(chip_try_finding_root_in_scale(scale, key, 5*12+key + 7) == key - 12);
+            /// 7, 4 
+            ASSERT(chip_try_finding_root_in_scale(scale, 2*12+key + 7, 3*12+key + 4) == 2*12 + key);
+        }
+
+        // octaves return the low note:
+        ASSERT(chip_try_finding_root_in_scale(scale, 5, 12 + 5) == 5);
+        ASSERT(chip_try_finding_root_in_scale(scale, 12 + 9, 5*12 + 9) == 12 + 9);
+    }
+    // TODO: other random scale
+    message("chip tests passed!\n");
 }
 #endif
