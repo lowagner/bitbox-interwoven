@@ -156,8 +156,6 @@ typedef enum
     // 1 - Use a wait of 2 for Arpeggio notes
     // 2 - Use a wait of 3 for Arpeggio notes
     // 3 - Use a wait of 4 for Arpeggio notes
-    // e - Use ArpNote as foundation for Arpeggio scale ??
-    // f - Use TrackNote as foundation for Arpeggio scale ??
     TrackSpecial = 13,
     TrackRandomize = 14,
     TrackJump = 15,
@@ -167,9 +165,10 @@ typedef enum
 
 typedef enum
 {   ScaleMajorTriad,
+    ScaleMinorTriad,
 
-    ScaleOctaves = 13,
-    ScaleFifths = 14,
+    ScaleFifths = 13,
+    ScaleOctaves = 14,
     ScaleChromatic = 15,
     // Nothing 16 or above is allowed
     ScaleMaxUnused = 16,

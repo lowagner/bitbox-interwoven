@@ -252,7 +252,7 @@ void editTrack_render_command(int j, int y)
         case TrackArpScale:
             cmd = 10; // staircase
             // TODO:
-            param = '?';
+            param = hex_character[param];
             break;
         case TrackInertia:
             cmd = 'i';
@@ -278,8 +278,8 @@ void editTrack_render_command(int j, int y)
             break;
         case TrackSpecial:
             // TODO:
-            cmd = '?';
-            param = '?';
+            cmd = 'a';
+            param = hex_character[param];
             break;
         case TrackRandomize:
             cmd = 'R';

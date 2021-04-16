@@ -568,14 +568,30 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
         }
+        case ScaleMinorTriad:
+        {   int scale[] = {3, 7, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleFifths:
+        {   int scale[] = {7, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleOctaves:
+            note += 12 * direction;
+            break;
         case ScaleChromatic:
             note += direction;
             break;
     }
+    // use wrapping here, too:
     if (note < low_note)
-        return low_note;
-    if (note > high_note)
         return high_note;
+    if (note > high_note)
+        return low_note;
     return note;
 }
 
@@ -697,7 +713,8 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             // TODO:
             break;
         case TrackSpecial:
-            // TODO:
+            // TODO: fancier things if param >= 4
+            chip_player[i].track_arp_wait = param + 1;
             break;
         case TrackRandomize:
         {
@@ -1248,7 +1265,7 @@ void test_chip()
     {   // finding the root in a scale
         int scale[] = {4, 7, 12};
 
-        for (int key = 0; key < 5; ++key)
+        for (int key = 0; key < 12; ++key)
         {   // high note is "higher" than low note in the scale:
             /// 4, 12
             ASSERT(chip_try_finding_root_in_scale(scale, key + 4, 12+key + 12) == key);
@@ -1267,6 +1284,8 @@ void test_chip()
             /// 7, 4 
             ASSERT(chip_try_finding_root_in_scale(scale, 2*12+key + 7, 3*12+key + 4) == 2*12 + key);
         }
+        // TODO: do test for more complicated scale, ensuring that the "simple" root is used if multiple options are available
+        // or just don't use any scales which are ambiguous??
 
         // octaves return the low note:
         ASSERT(chip_try_finding_root_in_scale(scale, 5, 12 + 5) == 5);
