@@ -569,6 +569,18 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;
         }
+        case ScaleMajor7:
+        {   int scale[] = {4, 7, 11, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleMinor7:
+        {   int scale[] = {3, 7, 10, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
         case ScaleDominant7:
         {   int scale[] = {4, 7, 10, 12}; // ensure having 12 at end
             root = chip_try_finding_root_in_scale(scale, low_note, high_note);

@@ -651,6 +651,12 @@ void editTrack_line()
                         case ScaleMinorTriad:
                             msg = "minor \\ 3";
                             break;
+                        case ScaleMajor7:
+                            msg = "Maj7 \\ 4";
+                            break;
+                        case ScaleMinor7:
+                            msg = "min7 \\ 4";
+                            break;
                         case ScaleDominant7:
                             msg = "Dom7 \\ 4";
                             break;
