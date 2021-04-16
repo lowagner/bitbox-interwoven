@@ -159,6 +159,8 @@ typedef enum
 typedef enum
 {   ScaleMajorTriad,
     ScaleMinorTriad,
+    ScaleDominant7,
+    ScaleDiminished7,
 
     ScaleFifths = 13,
     ScaleOctaves = 14,

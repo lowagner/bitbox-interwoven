@@ -486,13 +486,8 @@ static inline int chip_get_next_note_in_scale(const int *scale, int note, int di
 }
 
 static inline int chip_try_finding_root_in_scale(const int *scale1, int low_note, int high_note)
-{   // given a scale and a difference between high and low (mod 12),
-    // find the root note that would be the key of that scale.
-    // e.g., if we're in major scale {4, 7, 12} and high_note == 12
-    //          if low_note == 4,
-    //              then return root = 0
-    //          if low_note == 7,
-    //              then return root = 0
+{   // given a scale and the low and high notes,
+    // find the root note that would be the key of that scale (i.e., which includes low and high notes).
     // if we can't find anything meaningful, return low_note.
 
     // if the high and low notes are octaves apart, then we wouldn't have any information to guess root
@@ -570,6 +565,18 @@ static inline uint8_t chip_player_get_next_arp_note(uint8_t p, int direction)
         }
         case ScaleMinorTriad:
         {   int scale[] = {3, 7, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleDominant7:
+        {   int scale[] = {4, 7, 10, 12}; // ensure having 12 at end
+            root = chip_try_finding_root_in_scale(scale, low_note, high_note);
+            note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
+            break;
+        }
+        case ScaleDiminished7:
+        {   int scale[] = {3, 6, 9, 12}; // ensure having 12 at end
             root = chip_try_finding_root_in_scale(scale, low_note, high_note);
             note = chip_get_next_note_in_scale(scale, note - root, direction) + root;
             break;

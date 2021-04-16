@@ -580,7 +580,7 @@ void editTrack_line()
                     strcpy((char *)buffer, "arpeggio note");
                     break;
                 case TrackArpScale:
-                    strcpy((char *)buffer, "arpeggio scale");
+                    strcpy((char *)buffer, "arp. scale \\ # notes");
                     break;
                 case TrackArpWait:
                     strcpy((char *)buffer, "arpeggio note length");
@@ -646,19 +646,25 @@ void editTrack_line()
                 {   const char *msg;
                     switch (param)
                     {   case ScaleMajorTriad:
-                            msg = "Major 3";
+                            msg = "Major \\ 3";
                             break;
                         case ScaleMinorTriad:
-                            msg = "minor 3";
+                            msg = "minor \\ 3";
+                            break;
+                        case ScaleDominant7:
+                            msg = "Dom7 \\ 4";
+                            break;
+                        case ScaleDiminished7:
+                            msg = "dim7 \\ 4";
                             break;
                         case ScaleFifths:
-                            msg = "Fifths";
+                            msg = "fifths \\ 2";
                             break;
                         case ScaleOctaves:
-                            msg = "Octaves";
+                            msg = "Octaves \\ 1";
                             break;
                         case ScaleChromatic:
-                            msg = "Chromatic";
+                            msg = "Chromatic \\ 12";
                             break;
                         default:
                             msg = "??";
