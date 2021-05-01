@@ -701,6 +701,8 @@ int _check_instrument()
         return __check_instrument(0, MAX_INSTRUMENT_LENGTH);
 }
 
+// TODO: make sure to show all commands, even if they are past a break.
+// we can jump to those locations.  maybe make them gray.
 void editInstrument_line()
 {
     if (vga_line < 16)

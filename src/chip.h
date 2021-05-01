@@ -10,7 +10,7 @@
 
 #define MAX_INSTRUMENT_LENGTH 16
 #define DRUM_SECTION_LENGTH (MAX_INSTRUMENT_LENGTH/4)
-#define MAX_SONG_LENGTH 60
+#define MAX_SONG_LENGTH 256
 // User can set a "High" track (16-31) or a "Low" track (0-15) for each player.
 #define MAX_TRACKS 32
 #define MAX_TRACK_LENGTH 32
@@ -24,7 +24,6 @@ typedef enum {
 } chip_playing_t;
 
 extern chip_playing_t chip_playing;
-extern uint8_t chip_repeat;
 extern uint8_t chip_volume;
 
 // These are our possible waveforms.
@@ -208,38 +207,43 @@ typedef enum
     SongRepeatLowTrackForChosenPlayers = 6,
     SongRepeatHighTrackForChosenPlayers = 7,
     // multiply by 4 to get number of beats we will play tracks for.
-    // 0 maps to 16 which becomes 64.  Previously track length.
+    // 0 maps to 16 which becomes 64.  Sets the chip_track_playtime to that value.
     SongPlayTracksForCount = 8,
     SongSpeed = 9,
     SongTranspose = 10,
     // TODO: see if this makes sense as an effect, otherwise do something else:
     SongSquarify = 11,
     SongSetVariableA = 12,
-    // NOTE: params here CANNOT BE RANDOMIZED since this breaks being able to test conditionals for bad jumps
-    // 0 - If A == 0, execute next command, otherwise following
-    // 1 - If A > 0, execute next command, otherwise following
-    // 2 - If A < B, execute next command, otherwise following
-    // 3 - If A == B, execute next command, otherwise following
-    // END NOTE ABOUT NOT BEING RANDOMIZED
-    // 4 = SetNextCommandParameterToVariableA
-    // 5 - B = A, i.e. Copy Variable A into Variable B
-    // 6 - Swap Variable A and Variable B
-    // 7 - A = (A % B)      if B = 0, then A = 0
-    // 8 - A = (A / B)      if B = 0, then A = 15
-    // 9 - A = (A + B) & 15
-    // a - A = (A - B) & 15
-    // TODO: maybe different operations here:
-    // b - A = (A / 2)
-    // c - A = (A + 1) & 15, i.e., increment with wraparound
-    // d - A = (A - 1) & 15, i.e., decrement with wraparound
-    // e - Increment Variable A without going over 15 (i.e., if A < 15, ++A)
-    // f - Decrement Variable A without wraparound.  (i.e. if A, --A)
+    // NOTE: some params here CANNOT BE RANDOMIZED since this breaks being able to test conditionals for bad jumps
     SongSpecial = 13,
     SongRandomize = 14,
     SongJump = 15,
     // Nothing 16 or above is allowed
     SongMaxUnused = 16,
 } song_cmd_t;
+
+typedef enum
+{   // NOTE: THESE PARAMS CANNOT BE RANDOMIZED OR SET
+    SongIfAEqualsZeroExecuteNextOtherwiseFollowingCommand = 0,
+    SongIfAGreaterThanZeroExecuteNextOtherwiseFollowingCommand = 1,
+    SongIfALessThanBExecuteNextOtherwiseFollowingCommand = 2,
+    SongIfAEqualsBExecuteNextOtherwiseFollowingCommand = 3,
+    // END NOTE ABOUT NOT BEING RANDOMIZED OR SET
+    SongSetNextCommandParameterToA = 4,
+    SongSetBEqualToA = 5,   // B = A
+    SongSwapAAndB = 6,      // [A, B] = [B, A]
+    SongModAByB = 7,        // A = (A % B)      if B = 0, then A = 0
+    SongDivideAByB = 8,     // A = (A / B)      if B = 0, then A = 15
+    SongAddBToA = 9,            // A = (A + B) & 15
+    SongSubtractBFromA = 10,    // A = (A - B) & 15
+    SongHalveA = 11,            // A = A / 2
+    SongIncrementAWithWraparound = 12, // A = (A + 1) & 15
+    SongDecrementAWithWraparound = 13, // A = (A - 1) & 15
+    SongIncrementANoWrap = 14, // if A < 15, ++A
+    SongDecrementANoWrap = 15, // if A > 0, --A
+    // Do not use:
+    SongMaxUnusedSpecialParam = 16,
+} song_special_param_t;
 
 // TODO: just move into chip_player
 struct oscillator
@@ -316,33 +320,29 @@ struct chip_player
 
     uint8_t track_wait;
     uint8_t track_cmd_index;
-    uint8_t track_index; // current track index, 0 - 15
+    uint8_t track_index; // current track index, 0 - 31
     uint8_t next_track_index; // used for looping a track or playing next track in the song
 };
 
 void chip_reset_player(int i);
 extern struct chip_player chip_player[CHIP_PLAYERS];
 
-// TODO: maybe switch to song_command
-extern uint16_t chip_song[MAX_SONG_LENGTH];
-
-// TODO: preface with chip_ and probably change pos to position or abs_position
+// TODO: preface with chip_ and probably change pos to current_playtime?
 extern uint8_t track_pos;
-// TODO: preface with chip_
-extern uint8_t chip_track_length;
+extern uint8_t chip_track_playtime;
+
+extern uint8_t chip_song_cmd[MAX_SONG_LENGTH];
+extern uint8_t chip_song_cmd_index;
 
 // TODO: preface with chip_
 extern uint8_t song_transpose;
-extern uint8_t song_length;
 extern uint8_t song_speed;
-// TODO: preface with chip_ and probably change pos to position or abs_position
-extern uint8_t song_pos;
 
 void chip_init();
 void chip_reset();
 void chip_kill();
 void chip_play_song(int pos);
-void chip_play_track(int track);
+void chip_play_track(int track, int playtime);
 // TODO: chip_snapshot() and chip_restore() if people want to make a broken record sound
 
 // play a note of this instrument now - useful for SFX !

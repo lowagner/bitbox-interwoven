@@ -16,6 +16,7 @@
 #define MATRIX_WING_COLOR (RGB(30, 90, 90) | (RGB(30, 90, 90)<<16))
 #define NUMBER_LINES 20
 
+uint8_t editTrack_track_playtime;
 uint8_t editTrack_track;
 uint8_t editTrack_pos;
 uint8_t editTrack_offset;
@@ -35,7 +36,7 @@ enum
 uint8_t editTrack_menu_index;
 
 void editTrack_init()
-{
+{   editTrack_track_playtime = 32;
     editTrack_track = 0;
     editTrack_pos = 0;
     editTrack_offset = 0;
@@ -477,6 +478,8 @@ int _check_editTrack()
     return 0;
 }
 
+// TODO: make sure to show all commands, even if they are past a break.
+// we can jump to those locations.  maybe make them gray.
 void editTrack_line()
 {
     if (vga_line < 16)
@@ -534,8 +537,8 @@ void editTrack_line()
                 hex_character[editTrack_track & 15], 
                 ' ', 'P', hex_character[editTrack_player], 
                 ' ', 'I', hex_character[chip_player[editTrack_player].instrument],
-                ' ', 't', 'k', 'l', 'e', 'n', 
-                ' ', '0' + chip_track_length/10, '0' + chip_track_length%10,
+                ' ', 't', 'T', 'i', 'm', 'e', 
+                ' ', '0' + editTrack_track_playtime/10, '0' + editTrack_track_playtime%10,
             0 };
             font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
             break;
@@ -895,11 +898,11 @@ void editTrack_controls()
                     editTrack_player = (editTrack_player+switched)&3;
                     break;
                 case EditTrackMenuTrackLength:
-                    chip_track_length += switched * 4;
-                    if (chip_track_length > 64)
-                        chip_track_length = 64;
-                    else if (chip_track_length < 16)
-                        chip_track_length = 16;
+                    editTrack_track_playtime += switched * 4;
+                    if (editTrack_track_playtime > 64)
+                        editTrack_track_playtime = 64;
+                    else if (editTrack_track_playtime < 16)
+                        editTrack_track_playtime = 16;
                     break;
             }
             gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
@@ -1097,7 +1100,7 @@ void editTrack_controls()
             {
                 // play this instrument track.
                 // after the repeat, all tracks will sound.
-                chip_play_track(editTrack_track);
+                chip_play_track(editTrack_track, editTrack_track_playtime);
                 // avoid playing other instruments for now:
                 for (int i=0; i<editTrack_player; ++i)
                     chip_player[i].track_cmd_index = MAX_TRACK_LENGTH;

@@ -17,11 +17,11 @@
 #include "bitbox.h"
 #include "chip.h"
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 chip_playing_t chip_playing CCM_MEMORY;
-uint8_t chip_repeat CCM_MEMORY;
 uint8_t chip_volume CCM_MEMORY;
 
 // the structs that get updated multiple times a frame,
@@ -32,7 +32,7 @@ struct oscillator oscillator[CHIP_PLAYERS] CCM_MEMORY;
 chip_instrument_t chip_instrument[16] CCM_MEMORY;
 
 // a track corresponds to a single melody or single harmony, which has instructions on which instruments to play.
-uint8_t chip_track_length CCM_MEMORY;
+uint8_t chip_track_playtime CCM_MEMORY;
 uint8_t chip_track[MAX_TRACKS][CHIP_PLAYERS][MAX_TRACK_LENGTH] CCM_MEMORY;
 // Current absolute position since starting to play the track; shared between all players,
 // even if their current track command index is different (e.g. due to jumps).
@@ -44,15 +44,19 @@ struct chip_player chip_player[CHIP_PLAYERS] CCM_MEMORY;
 // tied in with creating a note randomly for sfx; maybe we should store more data on old oscillator state to restore.
 uint8_t chip_instrument_for_next_note_for_player[CHIP_PLAYERS] CCM_MEMORY;
 
-// a song is made out of a sequence of "measures".
-// for each "measure" in the song, you specify which track each player will play;
-// there are 16 tracks possible, so each measure takes up 16 bits (4 bits for specifying the track per player).
-uint16_t chip_song[MAX_SONG_LENGTH]; // a nibble for the track to play for each player/channel
+// a song is made out of a sequence of song commands (see song_cmd_t).
+uint8_t chip_song_cmd[MAX_SONG_LENGTH];
+uint8_t chip_song_cmd_index CCM_MEMORY;
+uint8_t chip_song_players CCM_MEMORY;
+uint8_t chip_song_volume CCM_MEMORY;
+int8_t chip_song_volumed CCM_MEMORY;
+uint8_t song_transpose CCM_MEMORY;
 uint8_t song_wait CCM_MEMORY; // >0 means wait N frames, 0 means play now. 
 uint8_t song_speed CCM_MEMORY;
-uint8_t song_pos CCM_MEMORY;
-uint8_t song_length CCM_MEMORY; // capped at MAX_SONG_LENGTH
-uint8_t song_transpose CCM_MEMORY;
+uint8_t chip_song_variable_A CCM_MEMORY;
+uint8_t chip_song_variable_B CCM_MEMORY;
+uint8_t chip_song_squarify CCM_MEMORY;
+
 
 // At each sample the phase is incremented by frequency/4. It is then used to
 // compute the output of the oscillator depending on the waveform.
@@ -300,12 +304,33 @@ static void chip_instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
     }
 }
 
+static inline void chip_reset_song()
+{   chip_playing = PlayingNone;
+    chip_song_cmd_index = 0;
+    song_speed = 4;
+    song_transpose = 0;
+    song_wait = 0;
+    track_pos = 0;
+    chip_song_volume = 255;
+    chip_song_variable_A = 0;
+    chip_song_variable_B = 0;
+    chip_song_squarify = 0;
+    chip_player[0].track_index = MAX_TRACKS;
+    chip_player[0].next_track_index = MAX_TRACKS;
+    chip_player[1].track_index = MAX_TRACKS;
+    chip_player[1].next_track_index = MAX_TRACKS;
+    chip_player[2].track_index = MAX_TRACKS;
+    chip_player[2].next_track_index = MAX_TRACKS;
+    chip_player[3].track_index = MAX_TRACKS;
+    chip_player[3].next_track_index = MAX_TRACKS;
+}
+
 void chip_init()
 {   // initialize things (only happens once).
     chip_volume = 128;
-    song_length = 16;
-    chip_track_length = 32;
-    song_speed = 4;
+    chip_reset_song();
+    // we assume it's 256 so that wrap around works immediately with u8's:
+    static_assert(MAX_SONG_LENGTH == 256);
 }
 
 void chip_reset_player(int i)
@@ -346,41 +371,21 @@ void chip_kill()
 
 void chip_play_song(int pos) 
 {   // Start playing a song from the provided position.
-    if (pos == 0)
-    {   // Reset to song defaults (let the tracks update as necessary):
-        chip_track_length = 32;
-        song_speed = 4;
-        song_transpose = 0;
-    }
-
-    song_wait = 0;
-    track_pos = 0;
+    chip_reset_song();
     chip_playing = PlayingSong;
-    song_pos = pos % song_length;
+    chip_song_cmd_index = pos;
     
     for (int i=0; i<CHIP_PLAYERS; ++i)
         chip_reset_player(i);
-
-    uint16_t tracks = chip_song[song_pos];
-    chip_player[0].track_index = tracks & 15;
-    chip_player[1].track_index = (tracks >> 4) & 15;
-    chip_player[2].track_index = (tracks >> 8) & 15;
-    chip_player[3].track_index = tracks >> 12;
-
-    tracks = chip_song[(song_pos+1)%song_length];
-    chip_player[0].next_track_index = tracks & 15;
-    chip_player[1].next_track_index = (tracks >> 4) & 15;
-    chip_player[2].next_track_index = (tracks >> 8) & 15;
-    chip_player[3].next_track_index = tracks >> 12;
 }
 
-void chip_play_track(int track)
+void chip_play_track(int track, int playtime)
 {   // Makes all players play the passed-in track.
-    song_wait = 0;
-    track_pos = 0;
+    // If track >= MAX_TRACKS, no track will be played.
+    chip_reset_song();
     chip_playing = PlayingTrack;
+    chip_track_playtime = playtime;
 
-    track &= 15;
     for (int i=0; i<CHIP_PLAYERS; ++i)
     {   // Make the players loop on this track.
         chip_reset_player(i);
@@ -524,7 +529,6 @@ static inline int chip_try_finding_root_in_scale(const int *scale1, int low_note
             ASSERT(delta12 > 0 && delta12 < 12);
             // since we only check scale1 < scale2, (scale_note2 - scale_note1) could theoretically
             // be reversed for high/low notes, so check 12 - delta12 as an option as well.
-            // TODO: test that
             if (delta12 == delta_high_low || (12 - delta12 == delta_high_low))
             {   int try_root = low_note - scale_note2;
                 if ((high_note - try_root) % 12 == scale_note1) // scale_note1 is between 0 and 11
@@ -779,8 +783,7 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             // TODO:
             break;
         case TrackRandomize:
-        {
-            uint8_t next_index = chip_player[i].track_cmd_index;
+        {   uint8_t next_index = chip_player[i].track_cmd_index;
             if (next_index >= MAX_TRACK_LENGTH)
                 break;
             uint8_t random = randomize(param);
@@ -798,64 +801,250 @@ static void track_run_command(uint8_t i, uint8_t cmd)
     }
 }
 
+static inline void chip_song_set_player_tracks(uint8_t track, uint8_t next_track)
+{   uint8_t players = chip_song_players ? chip_song_players : 15;
+    if (players & 1)
+    {   chip_player[0].track_index = track;
+        chip_player[0].next_track_index = next_track;
+    }
+    if (players & 2)
+    {   chip_player[1].track_index = track;
+        chip_player[1].next_track_index = next_track;
+    }
+    if (players & 4)
+    {   chip_player[2].track_index = track;
+        chip_player[2].next_track_index = next_track;
+    }
+    if (players & 8)
+    {   chip_player[3].track_index = track;
+        chip_player[3].next_track_index = next_track;
+    }
+}
+
 static inline void chip_update_players_for_track()
 {   // Runs updates on players based on track commands
     #ifdef DEBUG_CHIPTUNE
     message("%02d", track_pos);
     #endif
 
-    for (int i=0; i<CHIP_PLAYERS; ++i) 
-    {
+    for (int p=0; p<CHIP_PLAYERS; ++p) 
+    {   uint8_t track_index = chip_player[p].track_index;
         #ifdef DEBUG_CHIPTUNE
-        message(" | t: %02d/%02d) ", i, chip_player[i].track_cmd_index, track_pos);
+        message(" | [t%02d: %02d]", track_index, chip_player[p].track_cmd_index);
         #endif
-        while (!chip_player[i].track_wait && chip_player[i].track_cmd_index < MAX_TRACK_LENGTH) 
-            track_run_command(i, chip_track[chip_player[i].track_index][i][chip_player[i].track_cmd_index++]);
+        if (track_index >= MAX_TRACKS)
+            continue;
 
-        if (chip_player[i].track_wait)
-            --chip_player[i].track_wait;
+        while (!chip_player[p].track_wait && chip_player[p].track_cmd_index < MAX_TRACK_LENGTH) 
+            track_run_command(p, chip_track[track_index][p][chip_player[p].track_cmd_index++]);
+
+        if (chip_player[p].track_wait)
+            --chip_player[p].track_wait;
     }
 
     #ifdef DEBUG_CHIPTUNE
     message("\n");
     #endif
 
-    if (++track_pos == chip_track_length)
-    {
-        for (int i=0; i<CHIP_PLAYERS; ++i)
-        {
-            chip_player[i].track_cmd_index = 0;
-            chip_player[i].track_index = chip_player[i].next_track_index;
-            chip_player[i].track_wait = 0;
+    if (++track_pos == chip_track_playtime)
+    {   for (int p=0; p<CHIP_PLAYERS; ++p)
+        {   chip_player[p].track_cmd_index = 0;
+            chip_player[p].track_index = chip_player[p].next_track_index;
+            chip_player[p].track_wait = 0;
         }
         track_pos = 0;
     }
 }
 
+static void chip_song_check_jump_validity(uint8_t jump_from_index, uint8_t j)
+{   // returns true if jump (from jump_from_index) to the index j is invalid.
+    for (int k=0; k<20; ++k)
+    {   if (j == jump_from_index) // returning to the same spot is out of the question
+            return 1;
+        uint8_t command = chip_song_cmd[j];
+        switch (command & 15)
+        {   // Update instrument position j based on command:
+            case SongPlayTracksForCount:
+                // We found a wait, this jump is ok.
+                return 0;
+            case SongSpecial:
+                // if we have special conditionals, also die.
+                // make sure to play tracks for count before these.
+                if ((command>>4) < 4)
+                    return 1;
+            case SongJump:
+                j = (command >> 4) * 16;
+                break;
+            default:
+                ++j;
+        }
+    }
+    // invalid jump
+    return 1;
+}
+
+static void chip_song_try_setting_current_command_param_to(uint8_t param)
+{   // checks for jumps and conditionals before assigning new param.
+    uint8_t current_command = chip_song_cmd[chip_song_cmd_index];
+    uint8_t current_param = current_command >> 4;
+    current_command &= 15;
+    switch (current_command)
+    {   case SongSpecial:
+            // ignore changes to Song conditionals unless param is also a conditional:
+            if (current_param < 4 && param >= 4)
+                return;
+            break;
+        case SongJump:
+            // require jumps to be valid:
+            if (chip_song_check_jump_validity(chip_song_cmd_index, param))
+                return;
+            break;
+    }
+    // if we're here, we can change command to use new param:
+    chip_song_cmd[chip_song_cmd_index] = current_command | (param << 4);
+}
+
+static inline void chip_song_run_command(uint8_t cmd)
+{   uint8_t param = cmd >> 4;
+    cmd &= 15;
+    switch (cmd)
+    {   case SongBreak:
+            chip_reset_song();
+            chip_playing = PlayingSong;
+            // TODO: adjust multiplier on param if needed:
+            chip_track_playtime = 2 * param;
+            break;
+        case SongVolume:
+            // TODO: use
+            chip_song_volume = param * 17;
+            break;
+        case SongFadeInOrOut:
+            // TODO: use
+            chip_song_volumed = param < 8 ? param : -16 + param; 
+            break;
+        case SongChoosePlayers:
+            chip_song_players = param;
+            break;
+        case SongSetLowTrackForChosenPlayers:
+            chip_song_set_player_tracks(param, MAX_TRACKS);
+            break;
+        case SongSetHighTrackForChosenPlayers:
+            chip_song_set_player_tracks(16 + param, MAX_TRACKS);
+            break;
+        case SongRepeatLowTrackForChosenPlayers:
+            chip_song_set_player_tracks(param, param);
+            break;
+        case SongRepeatHighTrackForChosenPlayers:
+            chip_song_set_player_tracks(16 + param, 16 + param);
+            break;
+        case SongPlayTracksForCount:
+            chip_track_playtime = param ? 4 * param : 64;
+            break;
+        case SongSpeed:
+            song_speed = param;
+            break;
+        case SongTranspose:
+            song_transpose = param;
+            break;
+        case SongSquarify:
+            chip_song_squarify = param;
+            break;
+        case SongSetVariableA:
+            chip_song_variable_A = param;
+            break;
+        case SongSpecial:
+            switch (param)
+            {   case SongIfAEqualsZeroExecuteNextOtherwiseFollowingCommand:
+                    if (chip_song_variable_A)
+                        ++chip_song_cmd_index;
+                    break;
+                case SongIfAGreaterThanZeroExecuteNextOtherwiseFollowingCommand:
+                    if (!chip_song_variable_A)
+                        ++chip_song_cmd_index;
+                    break;
+                case SongIfALessThanBExecuteNextOtherwiseFollowingCommand:
+                    if (chip_song_variable_A >= chip_song_variable_B)
+                        ++chip_song_cmd_index;
+                    break;
+                case SongIfAEqualsBExecuteNextOtherwiseFollowingCommand:
+                    if (chip_song_variable_A != chip_song_variable_B)
+                        ++chip_song_cmd_index;
+                    break;
+                case SongSetNextCommandParameterToA:
+                    chip_song_try_setting_current_command_param_to(chip_song_variable_A);
+                    break;
+                case SongSetBEqualToA:
+                    chip_song_variable_B = chip_song_variable_A;
+                    break;
+                case SongSwapAAndB:
+                    param = chip_song_variable_A;
+                    chip_song_variable_A = chip_song_variable_B;
+                    chip_song_variable_B = param;
+                    break;
+                case SongModAByB:
+                    if (chip_song_variable_B)
+                        chip_song_variable_A %= chip_song_variable_B;
+                    else
+                        chip_song_variable_A = 0;
+                    break;
+                case SongDivideAByB:
+                    if (chip_song_variable_B)
+                        chip_song_variable_A /= chip_song_variable_B;
+                    else
+                        chip_song_variable_A = 15;
+                    break;
+                case SongAddBToA:
+                    chip_song_variable_A = (chip_song_variable_A + chip_song_variable_B) & 15;
+                    break;
+                case SongSubtractBFromA:
+                    chip_song_variable_A = (chip_song_variable_A - chip_song_variable_B) & 15;
+                    break;
+                case SongHalveA:      
+                    chip_song_variable_A /= 2; 
+                    break;
+                case SongIncrementAWithWraparound:
+                    chip_song_variable_A = (chip_song_variable_A + 1) & 15;
+                    break;
+                case SongDecrementAWithWraparound:
+                    chip_song_variable_A = (chip_song_variable_A + 15) & 15;
+                    break;
+                case SongIncrementANoWrap:
+                    if (chip_song_variable_A < 15)
+                        ++chip_song_variable_A;
+                    break;
+                case SongDecrementANoWrap:
+                    if (chip_song_variable_A)
+                        --chip_song_variable_A;
+                    break;
+            }
+            break;
+        case SongRandomize:
+            chip_song_try_setting_current_command_param_to(randomize(param));
+            break;
+        case SongJump:
+            chip_song_cmd_index = 16 * param;
+            break;
+    }
+}
+
 static inline void chip_update_players_for_song()
 {   // Called if user is playing a song
-    if (!track_pos) // == 0.  load the next track.
-    {
-        if (song_pos >= song_length) 
-        {
-            if (chip_repeat)
-                song_pos = 0;
-            else
-            {
-                chip_playing = 0;
-                return;
-            }
-        } 
+    if (!track_pos) // track_pos == 0
+    {   // run the next song command(s) 
         #ifdef DEBUG_CHIPTUNE
-        message("Now at position %d of song\n", song_pos);
+        message("\n{s: %02d}\n", chip_song_cmd_index);
         #endif
-       
-        song_pos = (song_pos+1)%song_length;
-        uint16_t tracks = chip_song[song_pos];
-        chip_player[0].next_track_index = tracks & 15;
-        chip_player[1].next_track_index = (tracks >> 4) & 15;
-        chip_player[2].next_track_index = (tracks >> 8) & 15;
-        chip_player[3].next_track_index = tracks >> 12;
+        chip_track_playtime = 0;
+        int k = 0;
+        while (1)
+        {   chip_song_run_command(chip_song_cmd[chip_song_cmd_index++]);
+            if (chip_track_playtime)
+                break;
+            if (++k >= 32)
+            {   message("song should have a PlayTracksForCount command at least every 32 steps.\n");
+                break;
+            }
+        }
     }
     
     chip_update_players_for_track();

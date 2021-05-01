@@ -352,12 +352,6 @@ io_error_t io_save_track(unsigned int i)
 
 io_error_t io_load_song()
 {   // Loads the song.
-
-    // set some defaults
-    chip_track_length = 32;
-    song_speed = 4;
-    song_length = 16;
-
     io_error_t ferr = io_save_recent_song_filename();
     if (ferr)
         return ferr;
