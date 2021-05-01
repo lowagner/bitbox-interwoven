@@ -19,7 +19,6 @@
 uint8_t editTrack_track;
 uint8_t editTrack_pos;
 uint8_t editTrack_offset;
-uint8_t music_editor_in_menu;
 uint8_t editTrack_copying;
 uint8_t editTrack_show_track;
 uint8_t editTrack_player;

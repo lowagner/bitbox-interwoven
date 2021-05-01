@@ -15,7 +15,7 @@ BITBOX=bitbox
 include $(BITBOX)/kernel/bitbox.mk
 
 src/font.c: src/mk_font.py
-	python2 src/mk_font.py
+	./src/mk_font.py
 
 clean::
 	rm -f src/font.c src/font.h

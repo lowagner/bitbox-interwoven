@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 starting_index = 0
 
@@ -1057,7 +1057,7 @@ with open("src/font.c", 'w') as f:
             f.write("%d,\n  "%x)
     f.write("};\n")
     if len(characters) + starting_index > 256:
-        print "WARNING, overflow!"
+        print("WARNING, overflow!")
     f.write("""
 void font_init()
 {   // Initializes the font cache.  make sure to call in game_init()

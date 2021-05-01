@@ -29,7 +29,7 @@ uint8_t chip_volume CCM_MEMORY;
 struct oscillator oscillator[CHIP_PLAYERS] CCM_MEMORY;
 
 // you can have up to 16 instruments, which need to be played to modify the oscillators.
-struct instrument instrument[16] CCM_MEMORY;
+chip_instrument_t chip_instrument[16] CCM_MEMORY;
 
 // a track corresponds to a single melody or single harmony, which has instructions on which instruments to play.
 uint8_t chip_track_length CCM_MEMORY;
@@ -94,9 +94,9 @@ static const int8_t sine_table[] = { // 16 values per row, 64 total
     ASSERT(duty != 0); \
     ASSERT(phase < duty)
 
-uint8_t instrument_max_index(uint8_t i, uint8_t j)
+uint8_t chip_instrument_max_index(uint8_t i, uint8_t j)
 {   // Returns the max index we shouldn't run (instrument command-wise) based on the current index.
-    if (instrument[i].is_drum)
+    if (chip_instrument[i].is_drum)
     {   // Drums are split up into multiple sections so multiple noises can be made with one instrument.
         if (j < 2*DRUM_SECTION_LENGTH)
             return 2*DRUM_SECTION_LENGTH;
@@ -106,7 +106,9 @@ uint8_t instrument_max_index(uint8_t i, uint8_t j)
     return MAX_INSTRUMENT_LENGTH;
 }
 
-int instrument_jump_bad(uint8_t inst, uint8_t max_index, uint8_t jump_from_index, uint8_t j)
+int chip_instrument_check_jump_validity
+(   uint8_t inst, uint8_t max_index, uint8_t jump_from_index, uint8_t j
+)
 {   // Check if this is an ok jump; if the jump command hits itself again before a wait,
     // we'll get stuck in an infinite loop.
     for (int k=0; k<20; ++k)
@@ -115,16 +117,16 @@ int instrument_jump_bad(uint8_t inst, uint8_t max_index, uint8_t jump_from_index
             return 0;
         else if (j == jump_from_index) // returning to the same spot is out of the question
             return 1;
-        switch (instrument[inst].cmd[j]&15)
+        switch (chip_instrument[inst].cmd[j]&15)
         {   // Update instrument position j based on command:
             case InstrumentJump:
-                j = instrument[inst].cmd[j]>>4;
+                j = chip_instrument[inst].cmd[j]>>4;
                 break;
             case InstrumentWait:
                 // We found a wait, this jump is ok.
                 return 0;
             case InstrumentBreak:
-                if ((instrument[inst].cmd[j]>>4) == 0)
+                if ((chip_instrument[inst].cmd[j]>>4) == 0)
                     return 0;
             default:
                 ++j;
@@ -204,7 +206,7 @@ static uint8_t randomize(uint8_t arg)
     return 0;
 }
 
-static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd) 
+static void chip_instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd) 
 {   // Have player i update their oscillator based on running a command on the instrument
     uint8_t param = cmd >> 4;
     switch (cmd&15) 
@@ -279,17 +281,17 @@ static void instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
         case InstrumentRandomize:
         {   // Randomize the next command's param in the list based on this command:
             uint8_t next_index = chip_player[i].cmd_index;
-            uint8_t max_index = instrument_max_index(inst, next_index-1);
+            uint8_t max_index = chip_instrument_max_index(inst, next_index-1);
             if (next_index >= max_index)
                 break;
             uint8_t random = randomize(param);
-            uint8_t next_command_type = instrument[inst].cmd[next_index] & 15;
+            uint8_t next_command_type = chip_instrument[inst].cmd[next_index] & 15;
             if (next_command_type == InstrumentJump)
             {   // don't allow a randomized jump to cause an infinite loop:
-                if (instrument_jump_bad(inst, max_index, next_index, random))
+                if (chip_instrument_check_jump_validity(inst, max_index, next_index, random))
                     break; // do not continue, do not allow this number as a jump
             }
-            instrument[inst].cmd[next_index] = next_command_type | (random<<4);
+            chip_instrument[inst].cmd[next_index] = next_command_type | (random<<4);
             break;
         }
         case InstrumentJump:
@@ -328,7 +330,7 @@ void chip_reset_player(int i)
     chip_player[i].track_vibrato_rate = 0;
     chip_player[i].track_vibrato_depth = 0;
     chip_player[i].bendd = 0;
-    chip_player[i].octave = instrument[i].octave;
+    chip_player[i].octave = chip_instrument[i].octave;
 }
 
 void chip_kill()
@@ -395,7 +397,7 @@ static void chip_play_note_internal(uint8_t p, uint8_t note)
     #endif
     chip_player[p].instrument = chip_instrument_for_next_note_for_player[p];
     // now set some defaults and the command index
-    if (instrument[chip_player[p].instrument].is_drum)
+    if (chip_instrument[chip_player[p].instrument].is_drum)
     {   // a drum instrument has 3 sub instruments.
         note %= 12;
         if (note < 10)
@@ -672,7 +674,9 @@ static void track_run_command(uint8_t i, uint8_t cmd)
                 chip_player[i].octave = param;
             else if (param == 7)
             {   // use instrument default octave
-                chip_player[i].octave = instrument[chip_instrument_for_next_note_for_player[i]].octave;
+                chip_player[i].octave = chip_instrument
+                [   chip_instrument_for_next_note_for_player[i]
+                ].octave;
             }
             else if (param < 12)
             {   // add a delta to current octave
@@ -893,17 +897,15 @@ static void chip_update_oscillators()
         uint16_t inertia_slide;
         int16_t inertia;
         uint8_t inst = chip_player[i].instrument;
-    
-        if (instrument[inst].is_drum)
-        {   // Run drum commands (with smaller instrument sequence):
-            // We can get a command to set wait to nonzero, so make sure we escape in that case:
-            while (!chip_player[i].wait && chip_player[i].cmd_index < chip_player[i].max_drum_index)
-                instrument_run_command(i, inst, instrument[inst].cmd[chip_player[i].cmd_index++]);
-        }
-        else
-        {   // Run instrument commands, similarly awaiting a wait to escape:
-            while (!chip_player[i].wait && chip_player[i].cmd_index < MAX_INSTRUMENT_LENGTH) 
-                instrument_run_command(i, inst, instrument[inst].cmd[chip_player[i].cmd_index++]);
+   
+        // Run drum commands (with smaller instrument sequence), or up to all commands if not a drum:
+        uint8_t max_index = chip_instrument[inst].is_drum ?
+            chip_player[i].max_drum_index : MAX_INSTRUMENT_LENGTH;
+        // We can get a command to set wait to nonzero, so make sure we escape in that case:
+        while (!chip_player[i].wait && chip_player[i].cmd_index < max_index)
+        {   chip_instrument_run_command
+            (   i, inst, chip_instrument[inst].cmd[chip_player[i].cmd_index++]
+            );
         }
 
         if (chip_player[i].wait)

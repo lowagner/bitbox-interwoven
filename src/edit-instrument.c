@@ -40,76 +40,76 @@ void editInstrument_load_defaults()
 {
     int i=0; // instrument 
     int ci = 0; // command index
-    instrument[i].octave = 2;
-    instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
-    instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentWaveform | (WfSaw<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentPan | (1<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (4<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
-    instrument[i].cmd[++ci] = InstrumentPan | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (7<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
-    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (15<<4); 
+    chip_instrument[i].octave = 2;
+    chip_instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWaveform | (WfSaw<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentPan | (1<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (4<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentPan | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (7<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (4<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (15<<4); 
     
     i = 1;
     ci = 0;
-    instrument[i].octave = 3;
-    instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
-    instrument[i].cmd[++ci] = InstrumentInertia | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentWaveform | (WfSine<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentVibrato | (0xc<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (1<<4); 
+    chip_instrument[i].octave = 3;
+    chip_instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentInertia | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWaveform | (WfSine<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentVibrato | (0xc<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (1<<4); 
     
     i = 2;
     ci = 0;
-    instrument[i].octave = 4;
-    instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
-    instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentWaveform | (WfNoise<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
-    instrument[i].cmd[++ci] = InstrumentWaveform | (WfPulse<<4); 
-    instrument[i].cmd[++ci] = InstrumentDutyDelta | (6<<4); 
-    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (1<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (12<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (7<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (3<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
-    instrument[i].cmd[++ci] = InstrumentJump | (7<<4); 
+    chip_instrument[i].octave = 4;
+    chip_instrument[i].cmd[ci] = InstrumentPan | (8<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentVolume | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWaveform | (WfNoise<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWaveform | (WfPulse<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentDutyDelta | (6<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (1<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (12<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (7<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (3<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (0<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentJump | (7<<4); 
     
     i = 3;
     ci = 0; 
-    instrument[i].octave = 3;
-    instrument[i].is_drum = 1; // drums get MAX_INSTRUMENT_LENGTH/4 commands for each sub-instrument
-    instrument[i].cmd[ci] = InstrumentWait | (5<<4); 
-    instrument[i].cmd[++ci] = InstrumentWaveform | (WfSine<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (0 << 4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (6<<4); 
-    instrument[i].cmd[++ci] = InstrumentPan | (1 << 4);  
-    instrument[i].cmd[++ci] = InstrumentWait | (6<<4); 
-    instrument[i].cmd[++ci] = InstrumentNote | (2 << 4); 
-    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (13<<4); // the first sub-instrument is long (8 commands) 
-    instrument[i].cmd[++ci] = InstrumentPan | (1<<4); 
-    instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentPan | (15<<4); 
-    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (10<<4);  // that was the second sub-instrument
+    chip_instrument[i].octave = 3;
+    chip_instrument[i].is_drum = 1; // drums get MAX_INSTRUMENT_LENGTH/4 commands for each sub-instrument
+    chip_instrument[i].cmd[ci] = InstrumentWait | (5<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWaveform | (WfSine<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (0 << 4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (6<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentPan | (1 << 4);  
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (6<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentNote | (2 << 4); 
+    chip_instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (13<<4); // the first sub-instrument is long (8 commands) 
+    chip_instrument[i].cmd[++ci] = InstrumentPan | (1<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentPan | (15<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (10<<4);  // that was the second sub-instrument
     
-    instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
-    instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (15<<4); 
-    instrument[i].cmd[++ci] = 0; 
-    instrument[i].cmd[++ci] = 0;  // that was the third (last) sub-instrument
+    chip_instrument[i].cmd[++ci] = InstrumentWait | (3<<4); 
+    chip_instrument[i].cmd[++ci] = InstrumentFadeMagnitude | (15<<4); 
+    chip_instrument[i].cmd[++ci] = 0; 
+    chip_instrument[i].cmd[++ci] = 0;  // that was the third (last) sub-instrument
 }
 
 static void editInstrument_short_command_message(uint8_t *buffer, uint8_t cmd)
@@ -172,14 +172,14 @@ void editInstrument_render_command(int j, int y)
     ASSERT(y >= 0 && y < 8);
     int x = 32;
     
-    uint8_t cmd = instrument[editInstrument_instrument].cmd[j];
+    uint8_t cmd = chip_instrument[editInstrument_instrument].cmd[j];
     uint8_t param = cmd>>4;
     cmd &= 15;
     int smash_together = 0;
 
     uint32_t *dst = (uint32_t *)draw_buffer + x/2;
     uint32_t color_choice[2];
-    if (!instrument[editInstrument_instrument].is_drum || j < 2*DRUM_SECTION_LENGTH)
+    if (!chip_instrument[editInstrument_instrument].is_drum || j < 2*DRUM_SECTION_LENGTH)
     {
         if (j % 2)
             color_choice[0] = 16843009u*BG_COLOR;
@@ -230,29 +230,27 @@ void editInstrument_render_command(int j, int y)
     }
     
     if (cmd == InstrumentBreak)
-    {
-        if (param == 0)
-        {
-            if (y == 7)
-            {
-                if (j == 0 || (instrument[editInstrument_instrument].cmd[j-1]&15) != InstrumentRandomize)
-                    show_instrument = 0;
+    {   if (param == 0)
+        {   if (y == 7)
+            {   if
+                (   j == 0 ||
+                    ((chip_instrument[editInstrument_instrument].cmd[j-1] & 15) != InstrumentRandomize)
+                )
+                {   show_instrument = 0;
+                }
             }
             cmd = '6';
             param = '4';
         }
         else
-        {
-            cmd = '0' + (4*param)/10;
+        {   cmd = '0' + (4*param)/10;
             param = '0' + (4*param)%10; 
         }
     }
     else 
     switch (cmd)
-    {
-        case InstrumentPan:
-        {    
-            uint8_t L, R=param-1;
+    {   case InstrumentPan:
+        {   uint8_t L, R=param-1;
             L = 14-R;
             if (param % 8 == 0)
             {
@@ -532,7 +530,7 @@ void editInstrument_render_command(int j, int y)
         return;
     int cmd_index = chip_player[editTrack_player].cmd_index;
     if (cmd_index)
-    switch (instrument[editInstrument_instrument].cmd[cmd_index-1]&15)
+    switch (chip_instrument[editInstrument_instrument].cmd[cmd_index-1]&15)
     {
         case InstrumentWait:
             --cmd_index;
@@ -579,11 +577,11 @@ void editInstrument_adjust_parameter(int direction)
 {
     if (!direction)
         return;
-    uint8_t cmd = instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
+    uint8_t cmd = chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
     uint8_t param = cmd>>4;
     cmd &= 15;
     param = (param + direction)&15;
-    instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = cmd | (param<<4);
+    chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = cmd | (param<<4);
 
     check_instrument();
 }
@@ -610,10 +608,10 @@ int __check_instrument(uint8_t j, uint8_t j_max)
                 return !(found_wait); // did we find a wait?
             }
             int j_next_jump = -1;
-            switch (instrument[editInstrument_instrument].cmd[j]&15)
+            switch (chip_instrument[editInstrument_instrument].cmd[j]&15)
             {
                 case InstrumentJump:
-                    j_next_jump = instrument[editInstrument_instrument].cmd[j]>>4;
+                    j_next_jump = chip_instrument[editInstrument_instrument].cmd[j]>>4;
                     if (j_next_jump == j_last_jump) // jumping forward to the original jump
                     {
                         message("jumped to the old jump\n");
@@ -639,20 +637,25 @@ int __check_instrument(uint8_t j, uint8_t j_max)
                     break;
                 case InstrumentBreak:
                     // check for a randomizer behind
-                    if (j > 0 && (instrument[editInstrument_instrument].cmd[j-1]&15) == InstrumentRandomize)
+                    if
+                    (   j > 0 &&
+                        (   (chip_instrument[editInstrument_instrument].cmd[j-1] & 15)
+                            == InstrumentRandomize
+                        )
+                    )
                     {}
-                    else if ((instrument[editInstrument_instrument].cmd[j]>>4) == 0)
+                    else if ((chip_instrument[editInstrument_instrument].cmd[j]>>4) == 0)
                         return 0;
                     // fall through to ++j
                 default:
                     ++j;
             }
         }
-        else switch (instrument[editInstrument_instrument].cmd[j]&15)
+        else switch (chip_instrument[editInstrument_instrument].cmd[j]&15)
         {
             case InstrumentJump:
                 j_last_jump = j;
-                j = instrument[editInstrument_instrument].cmd[j]>>4;
+                j = chip_instrument[editInstrument_instrument].cmd[j]>>4;
                 if (j > j_last_jump)
                 {
                     message("This probably shouldn't happen??\n");
@@ -668,9 +671,14 @@ int __check_instrument(uint8_t j, uint8_t j_max)
                 break;
             case InstrumentBreak:
                 // check for a randomizer behind
-                if (j > 0 && (instrument[editInstrument_instrument].cmd[j-1]&15) == InstrumentRandomize)
+                if
+                (   j > 0 &&
+                    (   (chip_instrument[editInstrument_instrument].cmd[j-1]&15)
+                        == InstrumentRandomize
+                    )
+                )
                 {}
-                else if ((instrument[editInstrument_instrument].cmd[j]>>4) == 0)
+                else if ((chip_instrument[editInstrument_instrument].cmd[j]>>4) == 0)
                     return 0;
                 // fall through to ++j
             default:
@@ -683,7 +691,7 @@ int __check_instrument(uint8_t j, uint8_t j_max)
 
 int _check_instrument()
 {
-    if (instrument[editInstrument_instrument].is_drum)
+    if (chip_instrument[editInstrument_instrument].is_drum)
     {
         return __check_instrument(0, 2*DRUM_SECTION_LENGTH) ||
             __check_instrument(2*DRUM_SECTION_LENGTH, 3*DRUM_SECTION_LENGTH) ||
@@ -740,8 +748,9 @@ void editInstrument_line()
             uint8_t msg[] = { 'i', 'n', 's', 't', 'r', 'u', 'm', 'e', 'n', 't', 
                 ' ', hex_character[editInstrument_instrument],
                 ' ',  'o', 'c', 't', 'a', 'v', 'e',
-                ' ',  hex_character[instrument[editInstrument_instrument].octave],
-                ' ', 'd', 'r', 'u', 'm', ' ', (instrument[editInstrument_instrument].is_drum ? 'Y' : 'N'),
+                ' ',  hex_character[chip_instrument[editInstrument_instrument].octave],
+                ' ', 'd', 'r', 'u', 'm', ' ',
+                (chip_instrument[editInstrument_instrument].is_drum ? 'Y' : 'N'),
             0 };
             font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
             break;
@@ -759,14 +768,14 @@ void editInstrument_line()
         }
         case 10:
         case 14:
-            if (instrument[editInstrument_instrument].is_drum || show_instrument)
+            if (chip_instrument[editInstrument_instrument].is_drum || show_instrument)
             {
                 show_instrument = 1; 
                 editInstrument_render_command(line-2, internal_line);
             }
             break;
         case 3:
-        {   uint8_t cmd_param = instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
+        {   uint8_t cmd_param = chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
             switch (cmd_param&15)
             {
                 case InstrumentBreak:
@@ -872,10 +881,12 @@ void editInstrument_line()
             goto maybe_show_instrument;
         }
         case 4:
-            if ((instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]&15) == InstrumentVibrato)
-            {
-                uint8_t msg[16];
-                switch ((instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]/16)/4) // rate
+            if
+            (   (chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] & 15)
+                == InstrumentVibrato
+            )
+            {   uint8_t msg[16];
+                switch ((chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]/16)/4) // rate
                 {
                     case 0:
                         strcpy((char *)msg, "  slow, ");
@@ -890,7 +901,7 @@ void editInstrument_line()
                         strcpy((char *)msg, " gamma, ");
                         break;
                 }
-                msg[8] = hex_character[(instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]/16)%4];
+                msg[8] = hex_character[(chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]/16)%4];
                 msg[9] = 0;
                 font_render_line_doubled(msg, 156, internal_line, 65535, BG_COLOR*257);
             }
@@ -906,7 +917,7 @@ void editInstrument_line()
             else
             {
                 buffer[0] = 'L'; buffer[1] = ':';
-                editInstrument_short_command_message(buffer+2, instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]-1);
+                editInstrument_short_command_message(buffer+2, chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]-1);
                 font_render_line_doubled(buffer, 112, internal_line, 65535, BG_COLOR*257);
             }
             goto maybe_show_instrument;
@@ -918,7 +929,7 @@ void editInstrument_line()
             else
             {
                 buffer[0] = 'R'; buffer[1] = ':';
-                editInstrument_short_command_message(buffer+2, instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]+1);
+                editInstrument_short_command_message(buffer+2, chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]+1);
                 font_render_line_doubled(buffer, 112, internal_line, 65535, BG_COLOR*257);
             }
             goto maybe_show_instrument;
@@ -1016,18 +1027,18 @@ static inline void editInstrument_menu_controls()
         gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
         if (editInstrument_cursor) // drums
         {
-            if (instrument[editInstrument_instrument].is_drum) 
-                instrument[editInstrument_instrument].is_drum = 0;
+            if (chip_instrument[editInstrument_instrument].is_drum) 
+                chip_instrument[editInstrument_instrument].is_drum = 0;
             else
-                instrument[editInstrument_instrument].is_drum = 1;
+                chip_instrument[editInstrument_instrument].is_drum = 1;
         }
         else
         {
-            instrument[editInstrument_instrument].octave += moved;
-            if (instrument[editInstrument_instrument].octave > 255)
-                instrument[editInstrument_instrument].octave = 6;
-            else if (instrument[editInstrument_instrument].octave > 6)
-                instrument[editInstrument_instrument].octave = 0;
+            chip_instrument[editInstrument_instrument].octave += moved;
+            if (chip_instrument[editInstrument_instrument].octave > 255)
+                chip_instrument[editInstrument_instrument].octave = 6;
+            else if (chip_instrument[editInstrument_instrument].octave > 6)
+                chip_instrument[editInstrument_instrument].octave = 0;
         }
     }
 
@@ -1082,10 +1093,10 @@ static inline void editInstrument_menu_controls()
                 return;
             }
             uint8_t *src, *dst;
-            src = &instrument[editInstrument_copying].cmd[0];
-            dst = &instrument[editInstrument_instrument].cmd[0];
-            instrument[editInstrument_instrument].octave = instrument[editInstrument_copying].octave;
-            instrument[editInstrument_instrument].is_drum = instrument[editInstrument_copying].is_drum;
+            src = &chip_instrument[editInstrument_copying].cmd[0];
+            dst = &chip_instrument[editInstrument_instrument].cmd[0];
+            chip_instrument[editInstrument_instrument].octave = chip_instrument[editInstrument_copying].octave;
+            chip_instrument[editInstrument_instrument].is_drum = chip_instrument[editInstrument_copying].is_drum;
             memcpy(dst, src, MAX_INSTRUMENT_LENGTH);
             game_set_message_with_timeout("pasted.", MESSAGE_TIMEOUT); 
             editInstrument_copying = 16;
@@ -1119,10 +1130,10 @@ static inline void editInstrument_edit_controls()
     int movement = 0;
     if (GAMEPAD_PRESSING(0, down))
     {
-        if (!instrument[editInstrument_instrument].is_drum)
+        if (!chip_instrument[editInstrument_instrument].is_drum)
         {
             if (editInstrument_cmd_index < MAX_INSTRUMENT_LENGTH-1 &&
-                instrument[editInstrument_instrument].cmd[editInstrument_cmd_index])
+                chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index])
                 ++editInstrument_cmd_index;
             else
                 editInstrument_cmd_index = 0;
@@ -1139,7 +1150,7 @@ static inline void editInstrument_edit_controls()
 
             if (editInstrument_cmd_index < MAX_INSTRUMENT_LENGTH-1)
             {
-                if (instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] == InstrumentBreak)
+                if (chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] == InstrumentBreak)
                     editInstrument_cmd_index = next_j;
                 else
                     ++editInstrument_cmd_index;
@@ -1151,14 +1162,14 @@ static inline void editInstrument_edit_controls()
     }
     if (GAMEPAD_PRESSING(0, up))
     {
-        if (!instrument[editInstrument_instrument].is_drum)
+        if (!chip_instrument[editInstrument_instrument].is_drum)
         {
             if (editInstrument_cmd_index)
                 --editInstrument_cmd_index;
             else
             {
                 while (editInstrument_cmd_index < MAX_INSTRUMENT_LENGTH-1 && 
-                    instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != InstrumentBreak)
+                    chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != InstrumentBreak)
                     ++editInstrument_cmd_index;
             }
         }
@@ -1187,7 +1198,7 @@ static inline void editInstrument_edit_controls()
             {
                 editInstrument_cmd_index = move_here_then_up;
                 while (editInstrument_cmd_index < but_no_further_than-1 && 
-                    instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != InstrumentBreak)
+                    chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] != InstrumentBreak)
                 {
                     ++editInstrument_cmd_index;
                 }
@@ -1214,15 +1225,15 @@ static inline void editInstrument_edit_controls()
     if (GAMEPAD_PRESS(0, X))
     {
         // delete
-        editInstrument_command_copy = instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]; // cut
-        if (!instrument[editInstrument_instrument].is_drum)
+        editInstrument_command_copy = chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index]; // cut
+        if (!chip_instrument[editInstrument_instrument].is_drum)
         {
             for (int j=editInstrument_cmd_index; j<MAX_INSTRUMENT_LENGTH-1; ++j)
             {
-                if ((instrument[editInstrument_instrument].cmd[j] = instrument[editInstrument_instrument].cmd[j+1]) == 0)
+                if ((chip_instrument[editInstrument_instrument].cmd[j] = chip_instrument[editInstrument_instrument].cmd[j+1]) == 0)
                     break;
             }
-            instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1] = InstrumentBreak;
+            chip_instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1] = InstrumentBreak;
         }
         else
         {
@@ -1236,10 +1247,10 @@ static inline void editInstrument_edit_controls()
             
             for (int j=editInstrument_cmd_index; j<max_j-1; ++j)
             {
-                if ((instrument[editInstrument_instrument].cmd[j] = instrument[editInstrument_instrument].cmd[j+1]) == 0)
+                if ((chip_instrument[editInstrument_instrument].cmd[j] = chip_instrument[editInstrument_instrument].cmd[j+1]) == 0)
                     break;
             }
-            instrument[editInstrument_instrument].cmd[max_j-1] = InstrumentBreak;
+            chip_instrument[editInstrument_instrument].cmd[max_j-1] = InstrumentBreak;
         }
         check_instrument();
         return;
@@ -1248,12 +1259,12 @@ static inline void editInstrument_edit_controls()
     if (GAMEPAD_PRESS(0, Y))
     {
         // insert
-        if (!instrument[editInstrument_instrument].is_drum)
+        if (!chip_instrument[editInstrument_instrument].is_drum)
         {
-            if ((instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1]&15) != InstrumentBreak)
+            if ((chip_instrument[editInstrument_instrument].cmd[MAX_INSTRUMENT_LENGTH-1]&15) != InstrumentBreak)
                 return game_set_message_with_timeout("list full, can't insert.", MESSAGE_TIMEOUT); 
             for (int j=MAX_INSTRUMENT_LENGTH-1; j>editInstrument_cmd_index; --j)
-                instrument[editInstrument_instrument].cmd[j] = instrument[editInstrument_instrument].cmd[j-1];
+                chip_instrument[editInstrument_instrument].cmd[j] = chip_instrument[editInstrument_instrument].cmd[j-1];
         }
         else
         {
@@ -1264,26 +1275,26 @@ static inline void editInstrument_edit_controls()
                 next_j = 3*DRUM_SECTION_LENGTH;
             else
                 next_j = MAX_INSTRUMENT_LENGTH;
-            if ((instrument[editInstrument_instrument].cmd[next_j-1]&15) != InstrumentBreak)
+            if ((chip_instrument[editInstrument_instrument].cmd[next_j-1]&15) != InstrumentBreak)
                 return game_set_message_with_timeout("list full, can't insert.", MESSAGE_TIMEOUT); 
 
             for (int j=next_j-1; j>editInstrument_cmd_index; --j)
-                instrument[editInstrument_instrument].cmd[j] = instrument[editInstrument_instrument].cmd[j-1];
+                chip_instrument[editInstrument_instrument].cmd[j] = chip_instrument[editInstrument_instrument].cmd[j-1];
         }
-        instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = editInstrument_command_copy;
+        chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = editInstrument_command_copy;
         check_instrument();
         return;
     }
 
     if (GAMEPAD_PRESS(0, L))
     {
-        uint8_t *cmd = &instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
+        uint8_t *cmd = &chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
         *cmd = ((*cmd - 1)&15) | ((*cmd)&240);
         check_instrument();
     }
     if (GAMEPAD_PRESS(0, R))
     {
-        uint8_t *cmd = &instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
+        uint8_t *cmd = &chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
         *cmd = ((*cmd + 1)&15) | ((*cmd)&240);
         check_instrument();
     }
@@ -1296,7 +1307,7 @@ static inline void editInstrument_edit_controls()
         game_message[0] = 0;
         editInstrument_note = (editInstrument_note + 1)%24;
         chip_reset_player(editTrack_player);
-        chip_player[editTrack_player].octave = instrument[editInstrument_instrument].octave;
+        chip_player[editTrack_player].octave = chip_instrument[editInstrument_instrument].octave;
         chip_play_note(editTrack_player, editInstrument_instrument, editInstrument_note, 240); 
     }
     
@@ -1306,7 +1317,7 @@ static inline void editInstrument_edit_controls()
         if (--editInstrument_note > 23)
             editInstrument_note = 23;
         chip_reset_player(editTrack_player);
-        chip_player[editTrack_player].octave = instrument[editInstrument_instrument].octave;
+        chip_player[editTrack_player].octave = chip_instrument[editInstrument_instrument].octave;
         chip_play_note(editTrack_player, editInstrument_instrument, editInstrument_note, 240); 
     }
 }

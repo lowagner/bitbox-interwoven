@@ -242,8 +242,8 @@ typedef enum
 } song_cmd_t;
 
 // TODO: just move into chip_player
-struct oscillator {
-    uint8_t pan;
+struct oscillator
+{   uint8_t pan;
     uint8_t volume;
     uint8_t waveform; // waveform (from the enum above)
     uint8_t static_amt;
@@ -255,23 +255,20 @@ struct oscillator {
 
 extern struct oscillator oscillator[CHIP_PLAYERS];
 
-struct instrument 
-{
-    uint8_t is_drum;
+typedef struct chip_instrument 
+{   uint8_t is_drum;
     uint8_t octave;
     // commands which create the instrument sound
     // stuff in the cmd array can be modified externally.
     uint8_t cmd[MAX_INSTRUMENT_LENGTH];
-};
+} chip_instrument_t;
 
-// TODO: preface with chip_
-extern struct instrument instrument[16];
+extern chip_instrument_t chip_instrument[16];
 
 extern uint8_t chip_track[MAX_TRACKS][CHIP_PLAYERS][MAX_TRACK_LENGTH];
 
 struct chip_player 
-{
-    uint8_t wait;
+{   uint8_t wait;
     uint8_t cmd_index;
     uint8_t instrument;
     uint8_t max_drum_index;
@@ -351,10 +348,10 @@ void chip_play_track(int track);
 // play a note of this instrument now - useful for SFX !
 void chip_play_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t track_volume);
 
-// TODO: preface with chip_ 
-uint8_t instrument_max_index(uint8_t i, uint8_t j);
-// TODO: preface with chip_, switch to sequence_invalid instead of jump_bad
-int instrument_jump_bad(uint8_t inst, uint8_t max_index, uint8_t jump_from_index, uint8_t j);
+uint8_t chip_instrument_max_index(uint8_t i, uint8_t j);
+int chip_instrument_check_jump_validity
+(   uint8_t inst, uint8_t max_index, uint8_t jump_from_index, uint8_t j
+);
 int track_jump_bad(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j);
 
 #endif

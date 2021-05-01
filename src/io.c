@@ -278,9 +278,9 @@ static io_error_t _io_load_INSTRUMENTS(unsigned int i)
         return IoReadError;
     if (bytes_get != 1)
         return IoMissingDataError;
-    instrument[i].is_drum = read&15;
-    instrument[i].octave = read >> 4;
-    fat_result = f_read(&fat_file, &instrument[i].cmd[0], MAX_INSTRUMENT_LENGTH, &bytes_get);
+    chip_instrument[i].is_drum = read&15;
+    chip_instrument[i].octave = read >> 4;
+    fat_result = f_read(&fat_file, &chip_instrument[i].cmd[0], MAX_INSTRUMENT_LENGTH, &bytes_get);
     if (fat_result != FR_OK)
         return IoReadError;
     if (bytes_get != MAX_INSTRUMENT_LENGTH)
@@ -292,13 +292,13 @@ static io_error_t _io_load_INSTRUMENTS(unsigned int i)
 static io_error_t _io_save_INSTRUMENTS(unsigned int i)
 {   // Saves an instrument.  i should be between 0 and 15 (inclusive).
     UINT bytes_get; 
-    uint8_t write = (instrument[i].is_drum ? 1 : 0) | (instrument[i].octave << 4);
+    uint8_t write = (chip_instrument[i].is_drum ? 1 : 0) | (chip_instrument[i].octave << 4);
     fat_result = f_write(&fat_file, &write, 1, &bytes_get);
     if (fat_result != FR_OK)
         return IoWriteError;
     if (bytes_get != 1)
         return IoMissingDataError;
-    fat_result = f_write(&fat_file, &instrument[i].cmd[0], MAX_INSTRUMENT_LENGTH, &bytes_get);
+    fat_result = f_write(&fat_file, &chip_instrument[i].cmd[0], MAX_INSTRUMENT_LENGTH, &bytes_get);
     if (fat_result != FR_OK)
         return IoWriteError;
     if (bytes_get != MAX_INSTRUMENT_LENGTH)
