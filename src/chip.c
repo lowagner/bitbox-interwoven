@@ -110,7 +110,7 @@ uint8_t chip_instrument_max_index(uint8_t i, uint8_t j)
     return MAX_INSTRUMENT_LENGTH;
 }
 
-int chip_instrument_check_jump_validity
+int chip_instrument_invalid_jump
 (   uint8_t inst, uint8_t max_index, uint8_t jump_from_index, uint8_t j
 )
 {   // Check if this is an ok jump; if the jump command hits itself again before a wait,
@@ -140,7 +140,7 @@ int chip_instrument_check_jump_validity
     return 1;
 }
 
-int track_jump_bad(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j)
+int chip_track_invalid_jump(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j)
 {   // Check if this is an ok jump; if the jump command hits itself again before a wait,
     // we'll get stuck in an infinite loop.
     for (int k=0; k<36; ++k)
@@ -292,7 +292,7 @@ static void chip_instrument_run_command(uint8_t i, uint8_t inst, uint8_t cmd)
             uint8_t next_command_type = chip_instrument[inst].cmd[next_index] & 15;
             if (next_command_type == InstrumentJump)
             {   // don't allow a randomized jump to cause an infinite loop:
-                if (chip_instrument_check_jump_validity(inst, max_index, next_index, random))
+                if (chip_instrument_invalid_jump(inst, max_index, next_index, random))
                     break; // do not continue, do not allow this number as a jump
             }
             chip_instrument[inst].cmd[next_index] = next_command_type | (random<<4);
@@ -789,7 +789,7 @@ static void track_run_command(uint8_t i, uint8_t cmd)
             uint8_t random = randomize(param);
             uint8_t t = chip_player[i].track_index;
             if ((chip_track[t][i][next_index]&15) == TrackJump && 
-                track_jump_bad(t, i, next_index, 2*random))
+                chip_track_invalid_jump(t, i, next_index, 2*random))
                 break;
             chip_track[t][i][next_index] = 
                 (chip_track[t][i][next_index]&15) | (random<<4);
@@ -856,7 +856,7 @@ static inline void chip_update_players_for_track()
     }
 }
 
-static void chip_song_check_jump_validity(uint8_t jump_from_index, uint8_t j)
+static void chip_song_invalid_jump(uint8_t jump_from_index, uint8_t j)
 {   // returns true if jump (from jump_from_index) to the index j is invalid.
     for (int k=0; k<20; ++k)
     {   if (j == jump_from_index) // returning to the same spot is out of the question
@@ -896,7 +896,7 @@ static void chip_song_try_setting_current_command_param_to(uint8_t param)
             break;
         case SongJump:
             // require jumps to be valid:
-            if (chip_song_check_jump_validity(chip_song_cmd_index, param))
+            if (chip_song_invalid_jump(chip_song_cmd_index, param))
                 return;
             break;
     }

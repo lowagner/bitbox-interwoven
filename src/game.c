@@ -31,7 +31,6 @@ void game_init()
 
     chip_init();
     font_init();
-    editSong_init();
     editTrack_init();
     editInstrument_init();
     io_error_t error = io_init();

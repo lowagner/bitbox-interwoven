@@ -854,7 +854,11 @@ void editTrack_line()
 
 void editTrack_controls()
 {   if (GAMEPAD_HOLDING(0, select))
-    {   game_message[0] = 0;
+    {   if (editTrack_bad)
+        {   strcpy((char *)game_message, "fix jump first");
+            return;
+        }
+        game_message[0] = 0;
         if (GAMEPAD_PRESS(0, up))
             game_switch(ModeNameSong);
         else if (GAMEPAD_PRESS(0, left))
@@ -1126,14 +1130,4 @@ void editTrack_controls()
         chip_kill();
         return;
     }
-
-    if (editTrack_bad)
-        return;
-
-    if (GAMEPAD_PRESS(0, select))
-    {   // Switch to editing instrument, cancel any copy.
-        editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
-        game_message[0] = 0;
-        game_switch(ModeEditInstrument);
-    } 
 }

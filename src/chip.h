@@ -349,9 +349,9 @@ void chip_play_track(int track, int playtime);
 void chip_play_note(uint8_t p, uint8_t inst, uint8_t note, uint8_t track_volume);
 
 uint8_t chip_instrument_max_index(uint8_t i, uint8_t j);
-int chip_instrument_check_jump_validity
+int chip_instrument_invalid_jump
 (   uint8_t inst, uint8_t max_index, uint8_t jump_from_index, uint8_t j
 );
-int track_jump_bad(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j);
+int chip_track_invalid_jump(uint8_t t, uint8_t i, uint8_t jump_from_index, uint8_t j);
 
 #endif

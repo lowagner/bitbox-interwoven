@@ -1327,6 +1327,10 @@ static inline void editInstrument_edit_controls()
 void editInstrument_controls()
 {   if (GAMEPAD_HOLDING(0, select))
     {   // Switch to editing tracks.
+        if (editInstrument_bad)
+        {   strcpy((char *)game_message, "fix jump first");
+            return;
+        }
         game_message[0] = 0;
         if (GAMEPAD_PRESS(0, up))
             game_switch(ModeNameSong);
@@ -1351,15 +1355,4 @@ void editInstrument_controls()
         editInstrument_menu_controls();
     else
         editInstrument_edit_controls();
-
-    // Don't allow escaping if the instrument sequence is invalid:
-    if (editInstrument_bad)
-        return;
-
-    if (GAMEPAD_PRESS(0, select))
-    {   // Switch to editing the song, cancel any copy
-        editInstrument_copying = 16;
-        game_message[0] = 0;
-        game_switch(ModeEditSong);
-    } 
 }
