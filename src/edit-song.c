@@ -12,21 +12,23 @@
 #include <stdlib.h> // rand
 
 #define BG_COLOR 128
+// TODO: make unique from edit-track.c:
+#define PLAY_COLOR (RGB(200, 100, 0)|(RGB(200, 100, 0)<<16))
 #define BOX_COLOR (RGB(180, 250, 180)|(RGB(180, 250, 180)<<16))
 #define MATRIX_WING_COLOR (RGB(30, 90, 30) | (RGB(30, 90, 30)<<16))
 #define NUMBER_LINES 20
 
 uint8_t music_editor_in_menu CCM_MEMORY;
 
-const uint8_t hex_character[64] = { 
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', // standard hex
+const uint8_t hex_character[64] =
+{   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', // standard hex
     'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', // up to 32
     'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', // up to 48
     'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 138, 255, // up to 64
 };
 
-const uint8_t note_name[12][2] = {
-    { 'C', ' ' }, 
+const uint8_t note_name[12][2] =
+{   { 'C', ' ' }, 
     { 'C', '#' }, 
     { 'D', ' ' }, 
     { 'E', 'b' }, 
@@ -42,8 +44,8 @@ const uint8_t note_name[12][2] = {
 
 uint8_t editSong_pos;
 uint8_t editSong_offset;
-uint8_t editSong_color[2];
-uint8_t editSong_last_painted;
+uint8_t editSong_copying;
+uint8_t editSong_command_appears_reachable;
 
 static inline void editSong_save_or_load_all(io_event_t save_or_load);
 
@@ -53,76 +55,312 @@ void editSong_start(int load_song)
     }
 }
 
+void editSong_render_command(int j, int y)
+{   int x = 20;
+    uint8_t next_command_will_be_reachable = editSong_command_appears_reachable;
+    #ifdef EMULATOR
+    if (y < 0 || y >= 8)
+    {
+        message("got too big a line count for editSong, line %d\n", j);
+        return;
+    }
+    #endif
+    
+    uint8_t cmd = chip_song_cmd[j];
+    uint8_t param = cmd>>4;
+    cmd &= 15;
+
+    ASSERT((x/2)%2 == 0);
+    uint32_t *dst = (uint32_t *)draw_buffer + x/2;
+    uint32_t color_choice[2];
+    if (j%2)
+        color_choice[0] = 16843009u*BG_COLOR;
+    else
+        color_choice[0] = 16843009u*149;
+    
+    if (j != editSong_pos)
+        color_choice[1] = 65535u*65537u;
+    else
+    {   color_choice[1] = RGB(190, 245, 255)|(RGB(190, 245, 255)<<16);
+        if (!music_editor_in_menu)
+        {   // draw a little dot indicating your edit cursor is at this command
+            if ((y+1)/2 == 1)
+            {   dst -= 4;
+                *dst = color_choice[1];
+                ++dst;
+                *dst = color_choice[1];
+                dst += 4 - 1;
+            }
+            else if ((y+1)/2 == 3)
+            {   dst -= 4;
+                *dst = 16843009u*BG_COLOR;
+                ++dst;
+                *dst = 16843009u*BG_COLOR;
+                dst += 4 - 1;
+            }
+        }
+    }
+    
+    if (cmd == SongBreak)
+    {
+        if (param == 0)
+        {
+            if (y == 7)
+            {
+                if (j == 0 || (chip_track[editTrack_track][editTrack_player][j-1]&15) != TrackRandomize)
+            }
+            cmd = '0';
+            param = '0';
+        }
+        else
+        {
+            cmd = '0' + (4*param)/10;
+            param = '0' + (4*param)%10; 
+        }
+        next_command_will_be_reachable = 0;
+    }
+    else 
+    switch (cmd)
+    {
+        case TrackOctave:
+            if (param < 7)
+            {
+                cmd = 'O';
+                param += '0';
+            }
+            else if (param == 7)
+            {
+                cmd = '=';
+                param = '=';
+            }
+            else if (param < 12)
+            {
+                cmd = (param%2) ? '+' : '/';
+                param = '0' + (param - 6)/2;
+            }
+            else
+            {
+                cmd = (param%2) ? '\\' : '-';
+                param = '0' + (17-param)/2;
+            }
+            break;
+        case TrackInstrument:
+            cmd = 'I';
+            param = hex_character[param];
+            break;
+        case TrackVolume:
+            cmd = 'V';
+            param = hex_character[param];
+            break;
+        case TrackFadeInOrOut:
+            if (param > 7)
+            {   // Fade out
+                cmd = '>'; 
+                param = hex_character[16 - param];
+            }
+            else
+            {   // Fade in
+                cmd = '<'; 
+                param = hex_character[param];
+            }
+            break;
+        case TrackNote:
+            if (param >= 12)
+                color_choice[1] = RGB(150,150,255)|(65535<<16);
+            param %= 12;
+            cmd = note_name[param][0];
+            param = note_name[param][1];
+            break;
+        case TrackWait:
+            cmd = 'W';
+            if (param)
+                param = hex_character[param];
+            else
+                param = 'g';
+            break;
+        case TrackArpNote:
+            color_choice[1] = RGB(150,255,150)|(65535<<16);
+            if (param >= 12)
+            {   switch (param)
+                {   case ArpPlayLowNote:
+                        cmd = 9; // down staircase
+                        param = '_';
+                        break;
+                    case ArpPlayHighNote:
+                        cmd = 10; // up staircase
+                        param = 248; // upper bar
+                        break;
+                    case ArpPlayNextNoteDown:
+                        cmd = 9; // down staircase
+                        param = '-';
+                        break;
+                    case ArpPlayNextNoteUp:
+                        cmd = 10; // up staircase
+                        param = '+';
+                        break;
+                }
+            }
+            else
+            {   cmd = note_name[param][0];
+                param = note_name[param][1];
+            }
+            break;
+        case TrackArpScale:
+            cmd = 10; // staircase
+            // TODO:
+            param = hex_character[param];
+            break;
+        case TrackArpWait:
+            cmd = 'a';
+            param = hex_character[1 + param];
+            break;
+        case TrackInertia:
+            cmd = 'i';
+            param = hex_character[param];
+            break;
+        case TrackVibrato:
+            cmd = '~';
+            param = hex_character[param];
+            break;
+        case TrackBend:
+            if (param < 8)
+            {   cmd = 11; // bend up
+                param = hex_character[param];
+            }
+            else
+            {   cmd = 12; // bend down
+                param = hex_character[16-param];
+            }
+            break;
+        case TrackStatic:
+            cmd = 'S'; 
+            param = hex_character[param];
+            break;
+        case TrackRandomize:
+            cmd = 'R';
+            param = 224 + param;
+            break;
+        case TrackJump:
+            cmd = 'J';
+            param = hex_character[2*param];
+            break;
+    }
+    if (!editSong_command_appears_reachable)
+    {   // change the command's colors so it doesn't look easily reachable
+        // TODO: do this for instrument and verse 
+        uint32_t swapper = ~color_choice[0];
+        color_choice[0] = ~color_choice[1];
+        color_choice[1] = swapper;
+    }
+    editSong_command_appears_unreachable = next_command_will_be_reachable;
+    
+    uint8_t shift = ((y/2))*4;
+    uint8_t row = (font[hex_character[j/16]] >> shift) & 15;
+    *(++dst) = color_choice[0];
+    for (int k=0; k<4; ++k)
+    {   *(++dst) = color_choice[row&1];
+        row >>= 1;
+    }
+    *(++dst) = color_choice[0];
+    row = (font[hex_character[j%16]] >> shift) & 15;
+    *(++dst) = color_choice[0];
+    for (int k=0; k<4; ++k)
+    {   *(++dst) = color_choice[row&1];
+        row >>= 1;
+    }
+    *(++dst) = color_choice[0];
+    row = (font[':'] >> shift) & 15;
+    for (int k=0; k<4; ++k)
+    {   *(++dst) = color_choice[row&1];
+        row >>= 1;
+    }
+    *(++dst) = color_choice[0];
+    *(++dst) = color_choice[0];
+    row = (font[cmd] >> shift) & 15;
+    for (int k=0; k<4; ++k)
+    {   *(++dst) = color_choice[row&1];
+        row >>= 1;
+    }
+    *(++dst) = color_choice[0];
+    
+    row = (font[param] >> shift) & 15;
+    for (int k=0; k<4; ++k)
+    {   *(++dst) = color_choice[row&1];
+        row >>= 1;
+    }
+    *(++dst) = color_choice[0];
+  
+    if (chip_playing != PlayingSong)
+        return;
+    int cmd_index = chip_song_cmd_index;
+    if (cmd_index && ((chip_song_cmd[cmd_index-1]&15) == SongPlayTracksForCount))
+    {   // the song advances its cmd index even though it's currently waiting based on this command;
+        // put the song position indicator on this previous wait command.
+        --cmd_index;
+    }
+    if (j == cmd_index)
+    {
+        if ((y+1)/2 == 1)
+        {
+            dst += 4;
+            *dst = PLAY_COLOR;
+            ++dst;
+            *dst = PLAY_COLOR;
+        }
+        else if ((y+1)/2 == 3)
+        {
+            dst += 4;
+            *dst = 16843009u*BG_COLOR;
+            ++dst;
+            *dst = 16843009u*BG_COLOR;
+        }
+    }
+}
+
+
 // TODO: make sure to show all commands, even if they are past a break.
 // we can jump to those locations.  maybe make them gray.
 void editSong_line()
-{
-    if (vga_line < 16)
-    {
-        if (vga_line/2 == 0)
-        {
-            memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
+{   if (vga_line < 16)
+    {   if (vga_line/2 == 0)
+        {   memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
             return;
         }
         return;
     }
     else if (vga_line >= 16 + NUMBER_LINES*10)
-    {
-        if (vga_line/2 == (16 +NUMBER_LINES*10)/2)
+    {   if (vga_line/2 == (16 +NUMBER_LINES*10)/2)
             memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
         return;
     }
     int line = (vga_line-16) / 10;
     int internal_line = (vga_line-16) % 10;
     if (internal_line == 0 || internal_line == 9)
-    {
-        memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
-        if (music_editor_in_menu && line == 0)
-        {   uint32_t *dst = (uint32_t *)draw_buffer + 39;
-            const uint32_t color = BOX_COLOR;
-            switch (editSong_menu_index)
-            {   case EditTrackMenuTrackIndex:
-                    dst += 4;
-                    break;
-                case EditTrackMenuPlayer:
-                    dst += 18;
-                    break;
-                case EditTrackMenuTrackLength:
-                    dst += 70;
-                    break;
-            }
-            *(++dst) = color;
-            *(++dst) = color;
-            *(++dst) = color;
-            *(++dst) = color;
-        }
+    {   memset(draw_buffer, BG_COLOR, 2*SCREEN_W);
         return;
     }
     --internal_line;
     uint8_t buffer[24];
     switch (line)
-    {
-        case 0:
-        {   // track Lx Pp tklen 64
-            uint8_t msg[] = {
-                (chip_playing && (track_pos/4 % 2==0)) ? '*' : ' ',
-                't', 'r', 'a', 'c', 'k', ' ', 
-                editSong_track < 16
-                ?   'L' : 'H',
-                hex_character[editSong_track & 15], 
-                ' ', 'P', hex_character[editSong_player], 
-                ' ', 'I', hex_character[chip_player[editSong_player].instrument],
+    {   case 0:
+        {   uint8_t msg[] =
+            {   (chip_playing && (track_pos/4 % 2==0)) ? '*' : ' ',
+                's', 'o', 'n', 'g', ' ', 
+                ' ', 't', 'r', 'a', 'n', 's', 
+                ' ', '0' + song_transpose/10, '0' + song_transpose%10,
+                ' ', 's', 'p', 'e', 'e', 'd', 
+                ' ', '0' + song_speed/10, '0' + song_speed%10,
                 ' ', 't', 'T', 'i', 'm', 'e', 
-                ' ', '0' + editSong_track_playtime/10, '0' + editSong_track_playtime%10,
-            0 };
+                ' ', '0' + chip_track_playtime/10, '0' + chip_track_playtime%10,
+                0
+            };
             font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
             break;
         }
         case 1:
             break;
         case 2:
-        {
-            editSong_show_track = 1; 
+        {   editSong_command_appears_reachable = 1; 
             editSong_render_command(editSong_offset+line-2, internal_line);
             // command
             uint8_t msg[] = { 'c', 'o', 'm', 'm', 'a', 'n', 'd', ' ', hex_character[editSong_pos], ':', 0 };
@@ -182,7 +420,7 @@ void editSong_line()
                     break;
             }
             font_render_line_doubled(buffer, 102, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 4:
         {   uint8_t command = chip_track[editSong_track][editSong_player][editSong_pos];
             uint8_t param = command >> 4;
@@ -299,11 +537,11 @@ void editSong_line()
                     break;
                 }
             }
-            goto maybe_show_song_command;
+            goto draw_song_command;
         }
         case 5:
             font_render_line_doubled((uint8_t *)"switch to:", 102 - 6*music_editor_in_menu, internal_line, 65535, BG_COLOR*257); 
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 6:
             if (music_editor_in_menu)
             {
@@ -315,7 +553,7 @@ void editSong_line()
                 editSong_short_command_message(buffer+2, chip_track[editSong_track][editSong_player][editSong_pos]-1);
                 font_render_line_doubled(buffer, 112, internal_line, 65535, BG_COLOR*257);
             }
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 7:
             if (music_editor_in_menu)
             {
@@ -327,10 +565,10 @@ void editSong_line()
                 editSong_short_command_message(buffer+2, chip_track[editSong_track][editSong_player][editSong_pos]+1);
                 font_render_line_doubled(buffer, 112, internal_line, 65535, BG_COLOR*257);
             }
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 8:
             font_render_line_doubled((uint8_t *)"dpad:", 102 - 6*music_editor_in_menu, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 9:
         {   const char *msg = "";
             if (music_editor_in_menu)
@@ -351,7 +589,7 @@ void editSong_line()
             else
                 msg = "adjust parameters";
             font_render_line_doubled((const uint8_t *)msg, 112, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         }
         case 11:
             if (music_editor_in_menu)
@@ -365,7 +603,7 @@ void editSong_line()
                 font_render_line_doubled((uint8_t *)"A:stop track", 96, internal_line, 65535, BG_COLOR*257);
             else
                 font_render_line_doubled((uint8_t *)"A:play track", 96, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 12:
             if (music_editor_in_menu)
             {
@@ -377,7 +615,7 @@ void editSong_line()
             }
             else
                 font_render_line_doubled((uint8_t *)"B:edit instrument", 96, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 13:
             if (music_editor_in_menu)
             {
@@ -391,28 +629,28 @@ void editSong_line()
             {
                 font_render_line_doubled((uint8_t *)"X:cut cmd", 96, internal_line, 65535, BG_COLOR*257);
             }
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 14:
             if (music_editor_in_menu)
             {
                 if (editSong_copying < CHIP_PLAYERS * MAX_TRACKS)
-                    goto maybe_show_song_command;
+                    goto draw_song_command;
                 strcpy((char *)buffer, "Y:file ");
                 strcpy((char *)(buffer+7), (char *)base_song_filename);
                 font_render_line_doubled(buffer, 96, internal_line, 65535, BG_COLOR*257);
             }
             else
                 font_render_line_doubled((uint8_t *)"Y:insert cmd", 96, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 16:
             if (music_editor_in_menu)
                 font_render_line_doubled((uint8_t *)"start:edit track", 96, internal_line, 65535, BG_COLOR*257);
             else
                 font_render_line_doubled((uint8_t *)"start:track menu", 96, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 17:
             font_render_line_doubled((uint8_t *)"select:special", 96, internal_line, 65535, BG_COLOR*257);
-            goto maybe_show_song_command;
+            goto draw_song_command;
         case 18:
             if (GAMEPAD_HOLDING(0, select))
                 font_render_line_doubled((uint8_t *)"> inst < song ^ up", 100, internal_line, 65535, BG_COLOR*257);
@@ -420,13 +658,13 @@ void editSong_line()
         case 19:
             break;
         default:
-          maybe_show_song_command:
-            if (editSong_show_track)
-                editSong_render_command(editSong_offset+line-2, internal_line);
+          draw_song_command:
+            editSong_render_command(editSong_offset+line-2, internal_line);
             break; 
     }
 }
 
+// TODO: play song from current position and play song from start
 void editSong_controls()
 {   if (GAMEPAD_HOLDING(0, select))
     {   if (editSong_bad)
@@ -444,131 +682,46 @@ void editSong_controls()
     }
 
     if (music_editor_in_menu)
-    {   int switched = 0;
-        if (GAMEPAD_PRESSING(0, left))
-            --switched;
-        if (GAMEPAD_PRESSING(0, right))
-            ++switched;
-        if (switched)
-        {   game_message[0] = 0;
-            editTrack_menu_index =
-            (   editTrack_menu_index + switched + EditTrackMenuMax
-            ) % EditTrackMenuMax;
-            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
-            return;
-        }
-        if (GAMEPAD_PRESSING(0, down))
-            --switched;
-        if (GAMEPAD_PRESSING(0, up))
-            ++switched;
-        if (switched)
-        {   game_message[0] = 0;
-            editTrack_pos = 0;
-            editTrack_offset = 0;
-            switch (editTrack_menu_index)
-            {   case EditTrackMenuTrackLoHi:
-                    editTrack_track ^= 16;
-                    break;
-                case EditTrackMenuTrackIndex:
-                    editTrack_track = (editTrack_track & 16) |
-                        ((editTrack_track + switched) & 15);
-                    break;
-                case EditTrackMenuPlayer:
-                    editTrack_player = (editTrack_player+switched)&3;
-                    break;
-                case EditTrackMenuTrackLength:
-                    editTrack_track_playtime += switched * 4;
-                    if (editTrack_track_playtime > 64)
-                        editTrack_track_playtime = 64;
-                    else if (editTrack_track_playtime < 16)
-                        editTrack_track_playtime = 16;
-                    break;
-            }
-            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
-            return;
-        }
-        
-        if (GAMEPAD_PRESSING(0, L))
-            --switched;
-        if (GAMEPAD_PRESSING(0, R))
-            ++switched;
-        if (switched)
-        {
-            game_message[0] = 0;
-            // Need a power of two for MAX_TRACKS:
-            ASSERT(((MAX_TRACKS - 1)&MAX_TRACKS) == 0);
-            editTrack_track = (editTrack_track+switched)&(MAX_TRACKS - 1);
-            editTrack_pos = 0;
-            editTrack_offset = 0;
-            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
-            return;
-        }
-
-        if (GAMEPAD_PRESS(0, X)) // copy
-        {   ASSERT(CHIP_PLAYERS * MAX_TRACKS < 256);
-            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
-            {
-                editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
-                game_message[0] = 0;
-            }
-            else
-            {
-                editTrack_copying = CHIP_PLAYERS*editTrack_track + editTrack_player;
-                game_set_message_with_timeout("copied.", MESSAGE_TIMEOUT);
-            }
-        }
-
-        if (GAMEPAD_PRESS(0, Y)) // paste
-        {
-            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
-            {
-                // paste
-                uint8_t *src, *dst;
-                src = &chip_track[editTrack_copying/4][editTrack_copying%CHIP_PLAYERS][0];
-                dst = &chip_track[editTrack_track][editTrack_player][0];
-                if (src == dst)
-                {
-                    editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
-                    game_set_message_with_timeout("pasting to same thing", MESSAGE_TIMEOUT);
-                    return;
-                }
-                memcpy(dst, src, sizeof(chip_track[0][0]));
-                game_set_message_with_timeout("pasted.", MESSAGE_TIMEOUT);
-                editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
-            }
-            else
-            {   // TODO: remove and use select + up
-                // switch to choose name and hope to come back
-                game_message[0] = 0;
-                game_switch(ModeNameSong);
-            }
-            return;
-        }
-        
-        int save_or_load = IoEventNone;
+    {   io_event_t save_or_load = IoEventNone;
         if (GAMEPAD_PRESS(0, A))
             save_or_load = IoEventSave;
         if (GAMEPAD_PRESS(0, B))
             save_or_load = IoEventLoad;
         if (save_or_load)
-        {
-            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
-            {
-                // cancel a copy 
-                editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
-                game_message[0] = 0;
-                return;
-            }
-
-            io_error_t error;
-            if (save_or_load == IoEventSave)
-                error = io_save_track(editTrack_track);
-            else
-                error = io_load_track(editTrack_track);
-            io_message_from_error(game_message, error, save_or_load);
+        {   editSong_save_or_load_all(save_or_load);
             return;
         }
-    }
+
+        if (GAMEPAD_PRESSING(0, L))
+        {   if (chip_volume > 4)
+                chip_volume -= 4;
+            else if (chip_volume)
+                --chip_volume;
+            --movement;
+        }
+        if (GAMEPAD_PRESSING(0, R))
+        {   if (chip_volume < 252)
+                chip_volume += 4;
+            else if (chip_volume < 255)
+                ++chip_volume;
+            ++movement;
+        }
+        if (movement) 
+        {   strcpy((char *)game_message, "global volume to ");
+            game_message[17] = hex_character[chip_volume/16];
+            game_message[18] = hex_character[chip_volume%16];
+            game_message[19] = 0;
+            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
+            game_message_timeout = MESSAGE_TIMEOUT;
+            return;
+        }
+
+        if (GAMEPAD_PRESS(0, X))
+        {   // load just editSong
+            io_message_from_error(game_message, io_load_song(), IoLoadEvent);
+            return;
+        }
+    }  
     else
     {   // editing, not menu
         int movement = 0;
@@ -667,203 +820,24 @@ void editSong_controls()
             return;
 
         if (GAMEPAD_PRESS(0, A))
-        {
-            // play all instruments (or stop them all)
-            track_pos = 0;
+        {   // Toggle playing the song on/off from beginning
+            game_message[0] = 0;
             if (chip_playing)
-            {
-                message("stop play\n");
                 chip_kill();
-            }
             else
-            {
-                // play this instrument track.
-                // after the repeat, all tracks will sound.
-                chip_play_track(editTrack_track, editTrack_track_playtime);
-                // avoid playing other instruments for now:
-                for (int i=0; i<editTrack_player; ++i)
-                    chip_player[i].track_cmd_index = MAX_TRACK_LENGTH;
-                for (int i=editTrack_player+1; i<4; ++i)
-                    chip_player[i].track_cmd_index = MAX_TRACK_LENGTH;
-            }
+                chip_play_song(0);
             return;
-        }
+        } 
         
-        if (GAMEPAD_PRESSING(0, B))
-        {
-            editInstrument_instrument = chip_player[editTrack_player].instrument;
-            game_switch(ModeEditInstrument);
-            return;
-        }
-    }
-    
-    if (GAMEPAD_PRESS(0, start))
-    {
-        game_message[0] = 0;
-        music_editor_in_menu = 1 - music_editor_in_menu; 
-        editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
-        chip_kill();
-        return;
-    }
-}
-
-void editSong_controls()
-{
-    if (music_editor_in_menu)
-    {
-        int movement = 0;
-        if (GAMEPAD_PRESSING(0, up))
-            ++movement;
-        if (GAMEPAD_PRESSING(0, down))
-            --movement;
-        if (GAMEPAD_PRESSING(0, left))
-            --movement;
-        if (GAMEPAD_PRESSING(0, right))
-            ++movement;
-        if (movement)
-        {
-            game_message[0] = 0;
-            song_length += movement;
-            if (song_length < 16)
-                song_length = 16;
-            else if (song_length > MAX_SONG_LENGTH)
-                song_length = MAX_SONG_LENGTH;
-            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
-            return;
-        }
-        
-        io_event_t save_or_load = IoEventNone;
-        if (GAMEPAD_PRESS(0, A))
-            save_or_load = IoEventSave;
         if (GAMEPAD_PRESS(0, B))
-            save_or_load = IoEventLoad;
-        if (save_or_load)
-        {   editSong_save_or_load_all(save_or_load);
-            return;
-        }
-
-        if (GAMEPAD_PRESSING(0, L))
-        {   if (chip_volume > 4)
-                chip_volume -= 4;
-            else if (chip_volume)
-                --chip_volume;
-            --movement;
-        }
-        if (GAMEPAD_PRESSING(0, R))
-        {   if (chip_volume < 252)
-                chip_volume += 4;
-            else if (chip_volume < 255)
-                ++chip_volume;
-            ++movement;
-        }
-        if (movement) 
-        {   strcpy((char *)game_message, "global volume to ");
-            game_message[17] = hex_character[chip_volume/16];
-            game_message[18] = hex_character[chip_volume%16];
-            game_message[19] = 0;
-            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
-            game_message_timeout = MESSAGE_TIMEOUT;
-            return;
-        }
-
-        if (GAMEPAD_PRESS(0, X))
-        {   // load just editSong
-            io_message_from_error(game_message, io_load_song(), 2);
-            return;
-        }
-
-        // TODO: remove and use select + up
-        if (GAMEPAD_PRESS(0, Y))
-        {   // switch to choose name and hope to come back
-            game_message[0] = 0;
-            game_switch(ModeNameSong);
-            return;
-        }
-    }
-    else // editing, not menu
-    {
-        int paint_if_moved = 0; 
-        if (GAMEPAD_PRESSING(0, Y))
-        {
-            game_message[0] = 0;
-            editSong_paint(0);
-            paint_if_moved = 1;
-        }
-        if (GAMEPAD_PRESSING(0, B))
-        {
-            game_message[0] = 0;
-            editSong_paint(1);
-            paint_if_moved = 2;
-        }
-
-        int switched = 0;
-        if (GAMEPAD_PRESSING(0, L))
-            --switched;
-        if (GAMEPAD_PRESSING(0, R))
-            ++switched;
-        if (switched)
-        {
-            editSong_color[editSong_last_painted] = (editSong_color[editSong_last_painted]+switched)&15;
-            game_message[0] = 0;
-        }
-        
-        int moved = 0;
-        if (GAMEPAD_PRESSING(0, down))
-        {
-            editTrack_player = (editTrack_player+1)&3;
-            moved = 1;
-        }
-        if (GAMEPAD_PRESSING(0, up))
-        {
-            editTrack_player = (editTrack_player-1)&3;
-            moved = 1;
-        }
-        if (GAMEPAD_PRESSING(0, left))
-        {
-            if (--editSong_pos >= song_length)
-            {
-                editSong_pos = song_length - 1;
-                editSong_offset = song_length - 16;
-            }
-            else if (editSong_pos < editSong_offset)
-                editSong_offset = editSong_pos;
-            moved = 1;
-        }
-        if (GAMEPAD_PRESSING(0, right))
-        {
-            if (++editSong_pos >= song_length)
-            {
-                editSong_pos = 0;
-                editSong_offset = 0;
-            }
-            else if (editSong_pos > editSong_offset+15)
-                editSong_offset = editSong_pos - 15;
-            moved = 1;
-        }
-        if (moved)
-        {
-            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
-            if (paint_if_moved)
-                editSong_paint(paint_if_moved-1);
-        }
-        else if (switched || paint_if_moved)
-            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
-
-        if (GAMEPAD_PRESS(0, A))
         {   // Toggle playing the song on/off
             game_message[0] = 0;
             if (chip_playing)
                 chip_kill();
             else
                 chip_play_song(editSong_pos);
-        } 
-        
-        if (GAMEPAD_PRESS(0, X))
-        {
-            editTrack_track = editSong_track_under_cursor();
-            game_switch(ModeEditTrack);
             return;
-        }
+        } 
     }
     
     if (GAMEPAD_PRESS(0, start))
@@ -871,7 +845,6 @@ void editSong_controls()
         game_message[0] = 0;
         music_editor_in_menu = 1 - music_editor_in_menu; 
         chip_kill();
-        chip_playing = PlayingNone;
         return;
     }
 }

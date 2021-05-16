@@ -21,6 +21,8 @@ uint8_t editTrack_track;
 uint8_t editTrack_pos;
 uint8_t editTrack_offset;
 uint8_t editTrack_copying;
+// keeps track of whether to continue showing track commands.  set to 1 at top
+// and set to zero if you encounter a break.
 uint8_t editTrack_show_track;
 uint8_t editTrack_player;
 uint8_t editTrack_command_copy;
@@ -1114,7 +1116,7 @@ void editTrack_controls()
             return;
         }
         
-        if (GAMEPAD_PRESSING(0, B))
+        if (GAMEPAD_PRESS(0, B))
         {
             editInstrument_instrument = chip_player[editTrack_player].instrument;
             game_switch(ModeEditInstrument);
