@@ -65,7 +65,8 @@ void editSong_render_command(int j, int y)
         return;
     }
     #endif
-    
+   
+    ASSERT(j >= 0 && j < 256);
     uint8_t cmd = chip_song_cmd[j];
     uint8_t param = cmd>>4;
     cmd &= 15;
@@ -101,148 +102,148 @@ void editSong_render_command(int j, int y)
         }
     }
     
-    if (cmd == SongBreak)
-    {
-        if (param == 0)
-        {
-            if (y == 7)
-            {
-                if (j == 0 || (chip_track[editTrack_track][editTrack_player][j-1]&15) != TrackRandomize)
-            }
-            cmd = '0';
-            param = '0';
-        }
-        else
-        {
-            cmd = '0' + (4*param)/10;
-            param = '0' + (4*param)%10; 
-        }
-        next_command_will_be_reachable = 0;
-    }
-    else 
     switch (cmd)
-    {
-        case TrackOctave:
-            if (param < 7)
-            {
-                cmd = 'O';
-                param += '0';
-            }
-            else if (param == 7)
-            {
-                cmd = '=';
-                param = '=';
-            }
-            else if (param < 12)
-            {
-                cmd = (param%2) ? '+' : '/';
-                param = '0' + (param - 6)/2;
-            }
-            else
-            {
-                cmd = (param%2) ? '\\' : '-';
-                param = '0' + (17-param)/2;
-            }
+    {   case SongBreak:
+            cmd = 'Q';
+            param = hex_parameter[param];
+            if (y == 7)
+                next_command_will_be_reachable = 0;
             break;
-        case TrackInstrument:
-            cmd = 'I';
-            param = hex_character[param];
-            break;
-        case TrackVolume:
+        case SongVolume:
             cmd = 'V';
             param = hex_character[param];
             break;
-        case TrackFadeInOrOut:
-            if (param > 7)
-            {   // Fade out
-                cmd = '>'; 
-                param = hex_character[16 - param];
-            }
-            else
-            {   // Fade in
-                cmd = '<'; 
+        case SongFadeInOrOut:
+            if (param < 8)
+            {   cmd = '<';
                 param = hex_character[param];
             }
+            else
+            {   cmd = '>';
+                param = hex_character[16 - param];
+            }
             break;
-        case TrackNote:
-            if (param >= 12)
-                color_choice[1] = RGB(150,150,255)|(65535<<16);
-            param %= 12;
-            cmd = note_name[param][0];
-            param = note_name[param][1];
+        case SongChoosePlayers:
+            cmd = 'P';
+            param = hex_character[param];
             break;
-        case TrackWait:
+        case SongSetLowTrackForChosenPlayers:
+            cmd = 't';
+            param = hex_character[param];
+            break;
+        case SongSetHighTrackForChosenPlayers:
+            cmd = 'T';
+            param = hex_character[param];
+            break;
+        case SongRepeatLowTrackForChosenPlayers:
+            cmd = 'l';
+            param = hex_character[param];
+            break;
+        case SongRepeatHighTrackForChosenPlayers:
+            cmd = 'L';
+            param = hex_character[param];
+            break;
+        case SongPlayTracksForCount:
             cmd = 'W';
             if (param)
                 param = hex_character[param];
             else
                 param = 'g';
             break;
-        case TrackArpNote:
-            color_choice[1] = RGB(150,255,150)|(65535<<16);
-            if (param >= 12)
-            {   switch (param)
-                {   case ArpPlayLowNote:
-                        cmd = 9; // down staircase
-                        param = '_';
-                        break;
-                    case ArpPlayHighNote:
-                        cmd = 10; // up staircase
-                        param = 248; // upper bar
-                        break;
-                    case ArpPlayNextNoteDown:
-                        cmd = 9; // down staircase
-                        param = '-';
-                        break;
-                    case ArpPlayNextNoteUp:
-                        cmd = 10; // up staircase
-                        param = '+';
-                        break;
-                }
-            }
-            else
-            {   cmd = note_name[param][0];
-                param = note_name[param][1];
-            }
-            break;
-        case TrackArpScale:
-            cmd = 10; // staircase
-            // TODO:
-            param = hex_character[param];
-            break;
-        case TrackArpWait:
-            cmd = 'a';
-            param = hex_character[1 + param];
-            break;
-        case TrackInertia:
-            cmd = 'i';
-            param = hex_character[param];
-            break;
-        case TrackVibrato:
-            cmd = '~';
-            param = hex_character[param];
-            break;
-        case TrackBend:
-            if (param < 8)
-            {   cmd = 11; // bend up
+        case SongSpeed:
+            cmd = 'S';
+            if (param)
                 param = hex_character[param];
-            }
             else
-            {   cmd = 12; // bend down
-                param = hex_character[16-param];
-            }
+                param = 'g';
             break;
-        case TrackStatic:
-            cmd = 'S'; 
+        case SongTranspose:
+            cmd = 'T';
             param = hex_character[param];
             break;
-        case TrackRandomize:
-            cmd = 'R';
+        case SongSquarify:
+            cmd = '_';
+            param = hex_character[param];
+            break;
+        case SongSetVariableA:
+            cmd = 'a';
+            param = hex_character[param];
+            break;
+        case SongSpecial:
+            switch (param)
+            {   case SongIfAEqualsZeroExecuteNextOtherwiseFollowingCommand:
+                    cmd = 13; // double exclamation
+                    param = 'a';
+                    break;
+                case SongIfAGreaterThanZeroExecuteNextOtherwiseFollowingCommand:
+                    cmd = '!';
+                    param = 'a';
+                    break;
+                case SongIfALessThanBExecuteNextOtherwiseFollowingCommand:
+                    cmd = 'a';
+                    param = '<';
+                    break;
+                case SongIfAEqualsBExecuteNextOtherwiseFollowingCommand:
+                    cmd = 'a';
+                    param = '=';
+                    break;
+                case SongSetNextCommandParameterToA:
+                    cmd = 'a';
+                    param = 'N';
+                    break;
+                case SongSetBEqualToA:
+                    cmd = 'b';
+                    param = '=';
+                    break;
+                case SongSwapAAndB:
+                    cmd = 'b';
+                    param = 'a';
+                    break;
+                case SongModAByB:
+                    cmd = 'a';
+                    param = '%';
+                    break;
+                case SongDivideAByB:
+                    cmd = 'a';
+                    param = '/';
+                    break;
+                case SongAddBToA:
+                    cmd = 'w';
+                    param = '+';
+                    break;
+                case SongSubtractBFromA:
+                    cmd = 'w';
+                    param = '-';
+                    break;
+                case SongHalveA:      
+                    cmd = 'a';
+                    param = 'H';
+                    break;
+                case SongIncrementAWithWraparound:
+                    cmd = '+';
+                    param = '+';
+                    break;
+                case SongDecrementAWithWraparound:
+                    cmd = '-';
+                    param = '-';
+                    break;
+                case SongIncrementANoWrap:
+                    cmd = '^';
+                    param = 'a';
+                    break;
+                case SongDecrementANoWrap:
+                    cmd = 127; // down arrow
+                    param = 'a';
+                    break;
+            }
+            break;
+        case SongRandomize:
+            cmd = 'R'; 
             param = 224 + param;
             break;
-        case TrackJump:
+        case SongJump:
             cmd = 'J';
-            param = hex_character[2*param];
+            param = hex_character[param];
             break;
     }
     if (!editSong_command_appears_reachable)

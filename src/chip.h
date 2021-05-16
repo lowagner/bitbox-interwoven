@@ -334,7 +334,7 @@ extern uint8_t chip_track_playtime;
 extern uint8_t chip_song_cmd[MAX_SONG_LENGTH];
 extern uint8_t chip_song_cmd_index;
 
-// TODO: preface with chip_
+// TODO: preface with chip_ OR put everything here inside a chip struct.
 extern uint8_t song_transpose;
 extern uint8_t song_speed;
 

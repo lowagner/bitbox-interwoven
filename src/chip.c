@@ -941,7 +941,7 @@ static inline void chip_song_run_command(uint8_t cmd)
             chip_track_playtime = param ? 4 * param : 64;
             break;
         case SongSpeed:
-            song_speed = param;
+            song_speed = param ? param : 16;
             break;
         case SongTranspose:
             song_transpose = param;

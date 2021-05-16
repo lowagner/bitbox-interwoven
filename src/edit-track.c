@@ -153,27 +153,27 @@ void editTrack_render_command(int j, int y)
         }
     }
     
-    if (cmd == TrackBreak)
-    {
-        if (param == 0)
-        {
-            if (y == 7)
-            {
-                if (j == 0 || (chip_track[editTrack_track][editTrack_player][j-1]&15) != TrackRandomize)
-                    editTrack_show_track = 0;
-            }
-            cmd = '0';
-            param = '0';
-        }
-        else
-        {
-            cmd = '0' + (4*param)/10;
-            param = '0' + (4*param)%10; 
-        }
-    }
-    else 
     switch (cmd)
-    {
+    {   case TrackBreak:
+            if (param == 0)
+            {   if
+                (   y == 7 && 
+                    (   j == 0 ||
+                        (   chip_track[editTrack_track][editTrack_player][j-1]&15
+                        )   != TrackRandomize
+                    )
+                )
+                {   editTrack_show_track = 0;
+                }
+                cmd = '0';
+                param = '0';
+            }
+            else
+            {
+                cmd = '0' + (4*param)/10;
+                param = '0' + (4*param)%10; 
+            }
+            break;
         case TrackOctave:
             if (param < 7)
             {
@@ -535,7 +535,7 @@ void editTrack_line()
                 (chip_playing && (track_pos/4 % 2==0)) ? '*' : ' ',
                 't', 'r', 'a', 'c', 'k', ' ', 
                 editTrack_track < 16
-                ?   'L' : 'H',
+                ?   't' : 'T',
                 hex_character[editTrack_track & 15], 
                 ' ', 'P', hex_character[editTrack_player], 
                 ' ', 'I', hex_character[chip_player[editTrack_player].instrument],
@@ -763,7 +763,7 @@ void editTrack_line()
             if (music_editor_in_menu)
             switch (editTrack_menu_index)
             {   case EditTrackMenuTrackLoHi:
-                    msg = "change lo/hi";
+                    msg = "change lo/hi (t/T)";
                     break;
                 case EditTrackMenuTrackIndex:
                     msg = "change track";
