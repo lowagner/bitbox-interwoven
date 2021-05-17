@@ -318,9 +318,6 @@ void editSong_render_command(int j, int y)
     }
 }
 
-
-// TODO: make sure to show all commands, even if they are past a break.
-// we can jump to those locations.  maybe make them gray.
 void editSong_line()
 {   if (vga_line < 16)
     {   if (vga_line/2 == 0)
@@ -364,64 +361,69 @@ void editSong_line()
         {   editSong_command_appears_reachable = 1; 
             editSong_render_command(editSong_offset+line-2, internal_line);
             // command
-            uint8_t msg[] = { 'c', 'o', 'm', 'm', 'a', 'n', 'd', ' ', hex_character[editSong_pos], ':', 0 };
+            uint8_t msg[] =
+            {   'c', 'o', 'm', 'm', 'a', 'n', 'd', ' ',
+                hex_character[editSong_pos/16], hex_character[editSong_pos%16], ':',
+                0
+            };
             font_render_line_doubled(msg, 96, internal_line, 65535, BG_COLOR*257);
             break;
         }
         case 3:
-            switch (chip_track[editSong_track][editSong_player][editSong_pos]&15)
-            {
-                case TrackBreak:
-                    strcpy((char *)buffer, "break until time");
+        {   uint8_t *msg = "";
+            switch (chip_song_cmd[editSong_pos]&15)
+            {   case SongBreak:
+                    msg = "end song";
                     break;
-                case TrackOctave:
-                    strcpy((char *)buffer, "octave");
+                case SongVolume:
+                    msg = "volume";
                     break;
-                case TrackInstrument:
-                    strcpy((char *)buffer, "instrument");
+                case SongFadeInOrOut:
+                    msg = "volume fade";
                     break;
-                case TrackVolume:
-                    strcpy((char *)buffer, "volume");
+                case SongChoosePlayers:
+                    msg = "choose players";
                     break;
-                case TrackFadeInOrOut:
-                    strcpy((char *)buffer, "fade in or out");
+                case SongSetLowTrackForChosenPlayers:
+                    msg = "select low track";
                     break;
-                case TrackNote:
-                    strcpy((char *)buffer, "relative note from C");
+                case SongSetHighTrackForChosenPlayers:
+                    msg = "select high TRACK";
                     break;
-                case TrackWait:
-                    strcpy((char *)buffer, "wait");
+                case SongRepeatLowTrackForChosenPlayers:
+                    msg = "loop low track";
                     break;
-                case TrackArpNote:
-                    strcpy((char *)buffer, "arpeggio note");
+                case SongRepeatHighTrackForChosenPlayers:
+                    msg = "loop high TRACK";
                     break;
-                case TrackArpScale:
-                    strcpy((char *)buffer, "arp. scale \\ # notes");
+                case SongPlayTracksForCount:
+                    msg = "play for duration";
                     break;
-                case TrackArpWait:
-                    strcpy((char *)buffer, "arpeggio note length");
+                case SongSpeed:
+                    msg = "song speed";
                     break;
-                case TrackInertia:
-                    strcpy((char *)buffer, "note inertia");
+                case SongTranspose:
+                    msg = "song transpose";
                     break;
-                case TrackVibrato:
-                    strcpy((char *)buffer, "vibrato rate, depth");
+                case SongSquarify:
+                    msg = "song squarify";
                     break;
-                case TrackBend:
-                    strcpy((char *)buffer, "track pitch bend");
+                case SongSetVariableA:
+                    msg = "set variable 'a'";
                     break;
-                case TrackStatic:
-                    strcpy((char *)buffer, "track static");
+                case SongSpecial:
+                    msg = "special";
                     break;
-                case TrackRandomize:
-                    strcpy((char *)buffer, "randomize next cmd");
+                case SongRandomize:
+                    msg = "randomize next cmd";
                     break;
-                case TrackJump:
-                    strcpy((char *)buffer, "jump to cmd index");
+                case SongJump:
+                    msg = "jump to cmd index";
                     break;
             }
-            font_render_line_doubled(buffer, 102, internal_line, 65535, BG_COLOR*257);
+            font_render_line_doubled(msg, 102, internal_line, 65535, BG_COLOR*257);
             goto draw_song_command;
+        }
         case 4:
         {   uint8_t command = chip_track[editSong_track][editSong_player][editSong_pos];
             uint8_t param = command >> 4;
