@@ -370,7 +370,7 @@ void editSong_line()
             break;
         }
         case 3:
-        {   uint8_t *msg = "";
+        {   const char *msg = "";
             switch (chip_song_cmd[editSong_pos]&15)
             {   case SongBreak:
                     msg = "end song";
@@ -421,122 +421,99 @@ void editSong_line()
                     msg = "jump to cmd index";
                     break;
             }
-            font_render_line_doubled(msg, 102, internal_line, 65535, BG_COLOR*257);
+            font_render_line_doubled((const uint8_t *)msg, 102, internal_line, 65535, BG_COLOR*257);
             goto draw_song_command;
         }
         case 4:
-        {   uint8_t command = chip_track[editSong_track][editSong_player][editSong_pos];
+        {   uint8_t command = chip_song_cmd[editSong_pos];
             uint8_t param = command >> 4;
             command &= 15;
             switch (command)
-            {   case TrackOctave:
-                    if (param == 7)
-                    {   font_render_line_doubled
-                        (   (const uint8_t *)"set from instrument",
-                            120, internal_line, 65535, BG_COLOR*257
-                        );
+            {   case SongChoosePlayers:
+                {   if (param == 0)
+                        param = 15;
+                    uint8_t msg[32] =
+                    {   'p', 'l', 'a', 'y', 'e', 'r', 's', ' ',
+                    };
+                    uint8_t *msg_writable = msg + 7;
+                    if (param & 1)
+                    {   *++msg_writable = '0';
+                        *++msg_writable = ',';
+                        *++msg_writable = ' ';
                     }
-                    break;
-                case TrackArpNote:
-                {   const char *msg;
-                    switch (param)
-                    {   case 12:
-                            msg = "drop to bass note";
-                            break;
-                        case 13:
-                            msg = "hit top note";
-                            break;
-                        case 14:
-                            msg = "hit higher note";
-                            break;
-                        case 15:
-                            msg = "hit lower note";
-                            break;
-                        default:
-                            msg = "set bass note";
-                            break;
+                    if (param & 2)
+                    {   *++msg_writable = '1';
+                        *++msg_writable = ',';
+                        *++msg_writable = ' ';
                     }
-                    if (msg[0])
-                        font_render_line_doubled((const uint8_t *)msg, 120, internal_line, 65535, BG_COLOR*257);
+                    if (param & 4)
+                    {   *++msg_writable = '2';
+                        *++msg_writable = ',';
+                        *++msg_writable = ' ';
+                    }
+                    if (param & 8)
+                    {   *++msg_writable = '3';
+                        msg_writable += 2;
+                    }
+                    *--msg_writable = 0;
+                    font_render_line_doubled
+                    (   msg, 120, internal_line, 65535, BG_COLOR*257
+                    );
                     break;
                 }
-                case TrackArpScale:
-                {   const char *msg;
+                case SongSpecial:
+                {   const char *msg = "";
                     switch (param)
-                    {   case ScaleMajorTriad:
-                            msg = "Major \\ 3";
+                    {   case SongIfAEqualsZeroExecuteNextOtherwiseFollowingCommand:
+                            msg = "exe next cmd if a==0";
                             break;
-                        case ScaleMinorTriad:
-                            msg = "minor \\ 3";
+                        case SongIfAGreaterThanZeroExecuteNextOtherwiseFollowingCommand:
+                            msg = "exe next cmd if a>0";
                             break;
-                        case ScaleMajor7:
-                            msg = "Maj7 \\ 4";
+                        case SongIfALessThanBExecuteNextOtherwiseFollowingCommand:
+                            msg = "exe next cmd if a<b";
                             break;
-                        case ScaleMinor7:
-                            msg = "min7 \\ 4";
+                        case SongIfAEqualsBExecuteNextOtherwiseFollowingCommand:
+                            msg = "exe next cmd if a==b";
                             break;
-                        case ScaleSuspended4Triad:
-                            msg = "sus4 \\ 3";
+                        case SongSetNextCommandParameterToA:
+                            msg = "set next param to a";
                             break;
-                        case ScaleSuspended2Triad:
-                            msg = "sus2 \\ 3";
+                        case SongSetBEqualToA:
+                            msg = "set b equal to a";
                             break;
-                        case ScaleMajor6:
-                            msg = "Maj6 \\ 4";
+                        case SongSwapAAndB:
+                            msg = "swap b and a";
                             break;
-                        case ScaleMinor6:
-                            msg = "min6 \\ 4";
+                        case SongModAByB:
+                            msg = "set a = a \% b";
                             break;
-                        case ScaleAugmentedTriad:
-                            msg = "aug \\ 3";
+                        case SongDivideAByB:
+                            msg = "set a = a / b";
                             break;
-                        case ScaleDiminishedTriad:
-                            msg = "dim \\ 3";
+                        case SongAddBToA:
+                            msg = "a += b with wrap & 15";
                             break;
-                        case ScaleAugmented7:
-                            msg = "aug7 \\ 4";
+                        case SongSubtractBFromA:
+                            msg = "a -= b with wrap & 15";
                             break;
-                        case ScaleDiminished7:
-                            msg = "dim7 \\ 4";
+                        case SongHalveA:      
+                            msg = "set a /= 2";
                             break;
-                        case ScaleFifths:
-                            msg = "fifths \\ 2";
+                        case SongIncrementAWithWraparound:
+                            msg = "a += 1 with wrap & 15";
                             break;
-                        case ScaleOctaves:
-                            msg = "Octaves \\ 1";
+                        case SongDecrementAWithWraparound:
+                            msg = "a -= 1 with wrap & 15";
                             break;
-                        case ScaleDominant7:
-                            msg = "Dom7 \\ 4";
+                        case SongIncrementANoWrap:
+                            msg = "++a if a < 15";
                             break;
-                        case ScaleChromatic:
-                            msg = "chromatic \\ 12";
+                        case SongDecrementANoWrap:
+                            msg = "--a if a > 0";
                             break;
-                        default:
-                            msg = "??";
                     }
                     font_render_line_doubled((const uint8_t *)msg, 120, internal_line, 65535, BG_COLOR*257);
-                    break;
-                }
-                case TrackVibrato:
-                {   uint8_t msg[16];
-                    switch (param/4) // rate
-                    {
-                        case 0:
-                            strcpy((char *)msg, "  slow, ");
-                            break;
-                        case 1:
-                            strcpy((char *)msg, "medium, ");
-                            break;
-                        case 2:
-                            strcpy((char *)msg, "  fast, ");
-                            break;
-                        case 3:
-                            strcpy((char *)msg, " gamma, ");
-                            break;
-                    }
-                    msg[8] = hex_character[param % 4];
-                    msg[9] = 0;
-                    font_render_line_doubled(msg, 120, internal_line, 65535, BG_COLOR*257);
                     break;
                 }
             }
