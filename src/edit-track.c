@@ -820,15 +820,7 @@ void editTrack_line()
             }
             goto maybe_show_track;
         case 14:
-            if (music_editor_in_menu)
-            {
-                if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
-                    goto maybe_show_track;
-                strcpy((char *)buffer, "Y:file ");
-                strcpy((char *)(buffer+7), (char *)base_song_filename);
-                font_render_line_doubled(buffer, 96, internal_line, 65535, BG_COLOR*257);
-            }
-            else
+            if (!music_editor_in_menu)
                 font_render_line_doubled((uint8_t *)"Y:insert cmd", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 16:
@@ -962,12 +954,6 @@ void editTrack_controls()
                 memcpy(dst, src, sizeof(chip_track[0][0]));
                 game_set_message_with_timeout("pasted.", MESSAGE_TIMEOUT);
                 editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
-            }
-            else
-            {   // TODO: remove and use select + up
-                // switch to choose name and hope to come back
-                game_message[0] = 0;
-                game_switch(ModeNameSong);
             }
             return;
         }

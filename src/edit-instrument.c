@@ -980,14 +980,6 @@ void editInstrument_line()
             }
             goto maybe_show_instrument;
         case 15:
-            if (music_editor_in_menu && !editInstrument_bad)
-            {
-                if (editInstrument_copying < 16)
-                    goto maybe_show_instrument;
-                strcpy((char *)buffer, "Y:file ");
-                strcpy((char *)(buffer+7), (char *)base_song_filename);
-                font_render_line_doubled(buffer, 96, internal_line, 65535, BG_COLOR*257);
-            }
             goto maybe_show_instrument;
         case 17:
             if (music_editor_in_menu)
@@ -1102,12 +1094,6 @@ static inline void editInstrument_menu_controls()
             memcpy(dst, src, MAX_INSTRUMENT_LENGTH);
             game_set_message_with_timeout("pasted.", MESSAGE_TIMEOUT); 
             editInstrument_copying = 16;
-        }
-        else
-        {   // switch to choose name and hope to come back
-            // TODO: remove and use select + up
-            game_message[0] = 0;
-            game_switch(ModeNameSong);
         }
         return;
     }
