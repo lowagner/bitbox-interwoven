@@ -43,8 +43,9 @@ const uint8_t note_name[12][2] =
 };
 
 uint8_t editSong_pos;
+uint8_t editSong_bad;
 uint8_t editSong_offset;
-uint8_t editSong_copying;
+uint8_t editSong_command_copy;
 uint8_t editSong_command_appears_reachable;
 
 static inline void editSong_save_or_load_all(io_event_t save_or_load);
@@ -53,6 +54,11 @@ void editSong_start(int load_song)
 {   if (load_song)
     {   editSong_save_or_load_all(IoEventLoad);
     }
+    editSong_bad = 0;
+    editSong_pos = 0;
+    editSong_offset = 0;
+    editSong_copying = 0;
+    editSong_command_copy = 0;
 }
 
 void editSong_render_command(int j, int y)
@@ -105,7 +111,7 @@ void editSong_render_command(int j, int y)
     switch (cmd)
     {   case SongBreak:
             cmd = 'Q';
-            param = hex_parameter[param];
+            param = hex_character[param];
             if (y == 7)
                 next_command_will_be_reachable = 0;
             break;
@@ -253,7 +259,7 @@ void editSong_render_command(int j, int y)
         color_choice[0] = ~color_choice[1];
         color_choice[1] = swapper;
     }
-    editSong_command_appears_unreachable = next_command_will_be_reachable;
+    editSong_command_appears_reachable = next_command_will_be_reachable;
     
     uint8_t shift = ((y/2))*4;
     uint8_t row = (font[hex_character[j/16]] >> shift) & 15;
@@ -316,6 +322,101 @@ void editSong_render_command(int j, int y)
             *dst = 16843009u*BG_COLOR;
         }
     }
+}
+
+int _editSong_check();
+
+void editSong_check()
+{   // check if that parameter broke something
+    if (_editSong_check())
+    {   editSong_bad = 1; 
+        game_set_message_with_timeout("bad jump, need wait in loop.", MESSAGE_TIMEOUT);
+    }
+    else
+    {   editSong_bad = 0; 
+        game_message[0] = 0;
+    }
+}
+
+int _editSong_check()
+{   // check for a JUMP which loops back on itself without waiting at least a little bit.
+    // return 1 if so, 0 if not.
+    int j=0; // current command index
+    int j_last_jump = -1;
+    int found_wait = 0;
+    for (int k=0; k<257; ++k)
+    {   if (j >= 256) // got to the end
+            return !(found_wait);
+        uint8_t command = chip_song_cmd[j];
+        if (j_last_jump >= 0)
+        {   if (j == j_last_jump) // we found our loop-back point
+                return !(found_wait); // did we find a wait?
+            int j_next_jump = -1;
+            switch (command & 15)
+            {   case SongJump:
+                    j_next_jump = 16*(command >> 4);
+                    if (j_next_jump == j_last_jump) // jumping forward to the original jump
+                    {   message("jumped to the old jump\n");
+                        return !(found_wait);
+                    }
+                    else if (j_next_jump > j_last_jump) // jumping past original jump
+                    {   message("This probably shouldn't happen.\n");
+                        j_last_jump = -1; // can't look for loops...
+                    }
+                    else
+                    {   message("jumped backwards again?\n");
+                        j_last_jump = j;
+                        found_wait = 0;
+                    }
+                    j = j_next_jump;
+                    break;
+                case SongPlayTracksForCount:
+                    message("saw wait at j=%d\n", j);
+                    found_wait = 1;
+                    ++j;
+                    break;
+                case SongBreak:
+                    // check for a randomizer behind
+                    if (j > 0 && (chip_song_cmd[j-1]&15) == TrackRandomize)
+                    {}
+                    else if (command>>4)
+                        return 0;
+                    j = 0;
+                    break;
+                default:
+                    ++j;
+            }
+        }
+        else
+        switch (command & 15)
+        {   case SongJump:
+                j_last_jump = j;
+                j = 16*(command >> 4);
+                if (j > j_last_jump)
+                {   message("This probably shouldn't happen??\n");
+                    j_last_jump = -1; // don't care, we moved ahead
+                }
+                else if (j == j_last_jump)
+                {   message("jumped to itself\n");
+                    return 1; // this is bad
+                }
+                else
+                    found_wait = 0;
+                break;
+            case SongBreak:
+                // check for a randomizer behind
+                if (j > 0 && (chip_song_cmd[j-1] & 15) == TrackRandomize)
+                {}
+                else if (command >> 4)
+                    return 0;
+                j = 0;
+                break;
+            default:
+                ++j;
+        }
+    }
+    message("couldn't finish after 257 iterations. congratulations.\nprobably looping back on self, but with waits.");
+    return 0;
 }
 
 void editSong_short_command_message(uint8_t *buffer, uint8_t cmd)
@@ -737,7 +838,7 @@ void editSong_controls()
         {
             uint8_t *memory = &chip_track[editTrack_track][editTrack_player][editTrack_pos];
             *memory = ((*memory+movement)&15)|((*memory)&240);
-            check_editTrack();
+            editSong_check();
         }
         if (GAMEPAD_PRESSING(0, down))
         {

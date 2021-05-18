@@ -361,70 +361,47 @@ void editTrack_render_command(int j, int y)
     }
 }
 
-int _check_editTrack();
+int _editTrack_check();
 
-void check_editTrack()
-{
-    // check if that parameter broke something
-    if (_check_editTrack())
-    {
-        editTrack_bad = 1; 
+void editTrack_check()
+{   // check if that parameter broke something
+    if (_editTrack_check())
+    {   editTrack_bad = 1; 
         game_set_message_with_timeout("bad jump, need wait in loop.", MESSAGE_TIMEOUT);
     }
     else
-    {
-        editTrack_bad = 0; 
+    {   editTrack_bad = 0; 
         game_message[0] = 0;
     }
     chip_kill();
 }
 
-void editTrack_adjust_parameter(int direction)
-{
-    if (!direction)
-        return;
-    uint8_t cmd = chip_track[editTrack_track][editTrack_player][editTrack_pos];
-    uint8_t param = cmd>>4;
-    cmd &= 15;
-    param = (param + direction)&15;
-    chip_track[editTrack_track][editTrack_player][editTrack_pos] = cmd | (param<<4);
-
-    check_editTrack();
-}
-
-int _check_editTrack()
-{
-    // check for a JUMP which loops back on itself without waiting at least a little bit.
+int _editTrack_check()
+{   // check for a JUMP which loops back on itself without waiting at least a little bit.
     // return 1 if so, 0 if not.
     int j=0; // current command index
     int j_last_jump = -1;
     int found_wait = 0;
     for (int k=0; k<64; ++k)
-    {
-        if (j >= MAX_TRACK_LENGTH) // got to the end
+    {   if (j >= MAX_TRACK_LENGTH) // got to the end
             return 0;
         if (j_last_jump >= 0)
-        {
-            if (j == j_last_jump) // we found our loop-back point
+        {   if (j == j_last_jump) // we found our loop-back point
                 return !(found_wait); // did we find a wait?
             int j_next_jump = -1;
             switch (chip_track[editTrack_track][editTrack_player][j]&15)
-            {
-                case TrackJump:
+            {   case TrackJump:
                     j_next_jump = 2*(chip_track[editTrack_track][editTrack_player][j]>>4);
                     if (j_next_jump == j_last_jump) // jumping forward to the original jump
-                    {
-                        message("jumped to the old jump\n");
+                    {   message("jumped to the old jump\n");
                         return !(found_wait);
                     }
                     else if (j_next_jump > j_last_jump) // jumping past original jump
-                    {
-                        message("This probably shouldn't happen.\n");
+                    {   message("This probably shouldn't happen.\n");
                         j_last_jump = -1; // can't look for loops...
                     }
                     else
-                    {
-                        message("jumped backwards again?\n");
+                    {   message("jumped backwards again?\n");
                         j_last_jump = j;
                         found_wait = 0;
                     }
@@ -448,18 +425,15 @@ int _check_editTrack()
             }
         }
         else switch (chip_track[editTrack_track][editTrack_player][j]&15)
-        {
-            case TrackJump:
+        {   case TrackJump:
                 j_last_jump = j;
                 j = 2*(chip_track[editTrack_track][editTrack_player][j]>>4);
                 if (j > j_last_jump)
-                {
-                    message("This probably shouldn't happen??\n");
+                {   message("This probably shouldn't happen??\n");
                     j_last_jump = -1; // don't care, we moved ahead
                 }
                 else if (j == j_last_jump)
-                {
-                    message("jumped to itself\n");
+                {   message("jumped to itself\n");
                     return 1; // this is bad
                 }
                 else
@@ -478,6 +452,20 @@ int _check_editTrack()
     }
     message("couldn't finish after 32 iterations. congratulations.\nprobably looping back on self, but with waits.");
     return 0;
+}
+
+
+void editTrack_adjust_parameter(int direction)
+{
+    if (!direction)
+        return;
+    uint8_t cmd = chip_track[editTrack_track][editTrack_player][editTrack_pos];
+    uint8_t param = cmd>>4;
+    cmd &= 15;
+    param = (param + direction)&15;
+    chip_track[editTrack_track][editTrack_player][editTrack_pos] = cmd | (param<<4);
+
+    editTrack_check();
 }
 
 // TODO: make sure to show all commands, even if they are past a break.
@@ -993,7 +981,7 @@ void editTrack_controls()
         {
             uint8_t *memory = &chip_track[editTrack_track][editTrack_player][editTrack_pos];
             *memory = ((*memory+movement)&15)|((*memory)&240);
-            check_editTrack();
+            editTrack_check();
         }
         if (GAMEPAD_PRESSING(0, down))
         {
@@ -1058,7 +1046,7 @@ void editTrack_controls()
                     break;
             }
             chip_track[editTrack_track][editTrack_player][MAX_TRACK_LENGTH-1] = TrackBreak;
-            check_editTrack();
+            editTrack_check();
             return;
         }
 
@@ -1072,7 +1060,7 @@ void editTrack_controls()
                 chip_track[editTrack_track][editTrack_player][j] = chip_track[editTrack_track][editTrack_player][j-1];
             }
             chip_track[editTrack_track][editTrack_player][editTrack_pos] = editTrack_command_copy;
-            check_editTrack();
+            editTrack_check();
             return;
         }
         

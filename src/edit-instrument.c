@@ -554,77 +554,62 @@ void editInstrument_render_command(int j, int y)
     }
 }
 
-int _check_instrument();
+int _editInstrument_check();
 
-void check_instrument()
-{
-    // check if that parameter broke something
-    if (_check_instrument())
-    {
-        editInstrument_bad = 1; 
+void editInstrument_check()
+{   // check if that parameter broke something
+    if (_editInstrument_check())
+    {   editInstrument_bad = 1; 
         game_set_message_with_timeout("bad jump, need wait in loop.", MESSAGE_TIMEOUT);
     }
     else
-    {
-        editInstrument_bad = 0; 
+    {   editInstrument_bad = 0; 
         game_message[0] = 0;
     }
     chip_player[editTrack_player].track_volume = 0;
     chip_player[editTrack_player].track_volumed = 0;
 }
 
-void editInstrument_adjust_parameter(int direction)
-{
-    if (!direction)
-        return;
-    uint8_t cmd = chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
-    uint8_t param = cmd>>4;
-    cmd &= 15;
-    param = (param + direction)&15;
-    chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = cmd | (param<<4);
-
-    check_instrument();
+int _editInstrument_check()
+{   if (chip_instrument[editInstrument_instrument].is_drum)
+    {   return __editInstrument_check(0, 2*DRUM_SECTION_LENGTH) ||
+            __editInstrument_check(2*DRUM_SECTION_LENGTH, 3*DRUM_SECTION_LENGTH) ||
+            __editInstrument_check(3*DRUM_SECTION_LENGTH, 4*DRUM_SECTION_LENGTH);
+    }
+    else
+        return __editInstrument_check(0, MAX_INSTRUMENT_LENGTH);
 }
 
-int __check_instrument(uint8_t j, uint8_t j_max)
-{
-    // check for a InstrumentJump which loops back on itself without waiting at least a little bit.
+int __editInstrument_check(uint8_t j, uint8_t j_max)
+{   // check for a InstrumentJump which loops back on itself without waiting at least a little bit.
     // return 1 if so, 0 if not.
     int j_last_jump = -1;
     int found_wait = 0;
     for (int k=0; k<32; ++k)
-    {
-        if (j >= j_max) // got to the end
-        {
-            message("made it to end, good!\n");
+    {   if (j >= j_max) // got to the end
+        {   message("made it to end, good!\n");
             return 0;
         }
         message("scanning instrument %d: line %d\n", editInstrument_instrument, j);
         if (j_last_jump >= 0)
-        {
-            if (j == j_last_jump) // we found our loop-back point
-            {
-                message("returned to the jump\n");
+        {   if (j == j_last_jump) // we found our loop-back point
+            {   message("returned to the jump\n");
                 return !(found_wait); // did we find a wait?
             }
             int j_next_jump = -1;
             switch (chip_instrument[editInstrument_instrument].cmd[j]&15)
-            {
-                case InstrumentJump:
+            {   case InstrumentJump:
                     j_next_jump = chip_instrument[editInstrument_instrument].cmd[j]>>4;
                     if (j_next_jump == j_last_jump) // jumping forward to the original jump
-                    {
-                        message("jumped to the old jump\n");
+                    {   message("jumped to the old jump\n");
                         return !(found_wait);
                     }
                     else if (j_next_jump > j_last_jump) // jumping past original jump
-                    {
-                        message("This probably shouldn't happen.\n");
+                    {   message("This probably shouldn't happen.\n");
                         j_last_jump = -1; // can't look for loops...
                     }
                     else
-                    {
-                        message("jumped backwards again?\n");
+                    {   message("jumped backwards again?\n");
                         j_last_jump = j;
                         found_wait = 0;
                     }
@@ -652,18 +637,15 @@ int __check_instrument(uint8_t j, uint8_t j_max)
             }
         }
         else switch (chip_instrument[editInstrument_instrument].cmd[j]&15)
-        {
-            case InstrumentJump:
+        {   case InstrumentJump:
                 j_last_jump = j;
                 j = chip_instrument[editInstrument_instrument].cmd[j]>>4;
                 if (j > j_last_jump)
-                {
-                    message("This probably shouldn't happen??\n");
+                {   message("This probably shouldn't happen??\n");
                     j_last_jump = -1; // don't care, we moved ahead
                 }
                 else if (j == j_last_jump)
-                {
-                    message("jumped to itself\n");
+                {   message("jumped to itself\n");
                     return 1; // this is bad
                 }
                 else
@@ -689,16 +671,17 @@ int __check_instrument(uint8_t j, uint8_t j_max)
     return 0;
 }
 
-int _check_instrument()
+void editInstrument_adjust_parameter(int direction)
 {
-    if (chip_instrument[editInstrument_instrument].is_drum)
-    {
-        return __check_instrument(0, 2*DRUM_SECTION_LENGTH) ||
-            __check_instrument(2*DRUM_SECTION_LENGTH, 3*DRUM_SECTION_LENGTH) ||
-            __check_instrument(3*DRUM_SECTION_LENGTH, 4*DRUM_SECTION_LENGTH);
-    }
-    else
-        return __check_instrument(0, MAX_INSTRUMENT_LENGTH);
+    if (!direction)
+        return;
+    uint8_t cmd = chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
+    uint8_t param = cmd>>4;
+    cmd &= 15;
+    param = (param + direction)&15;
+    chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = cmd | (param<<4);
+
+    editInstrument_check();
 }
 
 // TODO: make sure to show all commands, even if they are past a break.
@@ -1057,7 +1040,7 @@ static inline void editInstrument_menu_controls()
         else
         {
             error = io_load_instrument(editInstrument_instrument);
-            check_instrument();
+            editInstrument_check();
         }
         io_message_from_error(game_message, error, save_or_load);
         return;
@@ -1240,7 +1223,7 @@ static inline void editInstrument_edit_controls()
             }
             chip_instrument[editInstrument_instrument].cmd[max_j-1] = InstrumentBreak;
         }
-        check_instrument();
+        editInstrument_check();
         return;
     }
 
@@ -1270,7 +1253,7 @@ static inline void editInstrument_edit_controls()
                 chip_instrument[editInstrument_instrument].cmd[j] = chip_instrument[editInstrument_instrument].cmd[j-1];
         }
         chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index] = editInstrument_command_copy;
-        check_instrument();
+        editInstrument_check();
         return;
     }
 
@@ -1278,13 +1261,13 @@ static inline void editInstrument_edit_controls()
     {
         uint8_t *cmd = &chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
         *cmd = ((*cmd - 1)&15) | ((*cmd)&240);
-        check_instrument();
+        editInstrument_check();
     }
     if (GAMEPAD_PRESS(0, R))
     {
         uint8_t *cmd = &chip_instrument[editInstrument_instrument].cmd[editInstrument_cmd_index];
         *cmd = ((*cmd + 1)&15) | ((*cmd)&240);
-        check_instrument();
+        editInstrument_check();
     }
     
     if (editInstrument_bad) // can't do anything else until you fix this

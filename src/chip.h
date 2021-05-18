@@ -189,7 +189,6 @@ typedef enum
     ArpPlayMaxUnused = 16,
 } chip_arp_note_t;
 
-// TODO: make song a list of song cmds, up to 128 commands long
 typedef enum
 {   // Parameter indicates how long we should wait before restarting song.  0 = immediately
     SongBreak = 0,

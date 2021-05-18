@@ -856,7 +856,7 @@ static inline void chip_update_players_for_track()
     }
 }
 
-static void chip_song_invalid_jump(uint8_t jump_from_index, uint8_t j)
+static int chip_song_invalid_jump(uint8_t jump_from_index, uint8_t j)
 {   // returns true if jump (from jump_from_index) to the index j is invalid.
     for (int k=0; k<20; ++k)
     {   if (j == jump_from_index) // returning to the same spot is out of the question
@@ -864,6 +864,7 @@ static void chip_song_invalid_jump(uint8_t jump_from_index, uint8_t j)
         uint8_t command = chip_song_cmd[j];
         switch (command & 15)
         {   // Update instrument position j based on command:
+            // TODO: SongBreak (0 isn't ok, 1-15 is ok, but check for randomization before)
             case SongPlayTracksForCount:
                 // We found a wait, this jump is ok.
                 return 0;
