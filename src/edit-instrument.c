@@ -555,6 +555,7 @@ void editInstrument_render_command(int j, int y)
 }
 
 int _editInstrument_check();
+int __editInstrument_check(uint8_t j, uint8_t j_max);
 
 void editInstrument_check()
 {   // check if that parameter broke something

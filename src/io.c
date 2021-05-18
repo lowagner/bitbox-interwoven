@@ -15,7 +15,7 @@
 #define TRACKS_BYTE_STRIDE (CHIP_PLAYERS /* # players */ * MAX_TRACK_LENGTH)
 #define TRACKS_BYTE_LENGTH (MAX_TRACKS * TRACKS_BYTE_STRIDE)
 #define SONG_BYTE_OFFSET (TRACKS_BYTE_OFFSET + TRACKS_BYTE_LENGTH)
-#define SONG_BYTE_LENGTH (1 /* length of song */ + sizeof(chip_song))
+#define SONG_BYTE_LENGTH (sizeof(chip_song_cmd))
 #define TOTAL_FILE_SIZE (SONG_BYTE_OFFSET + SONG_BYTE_LENGTH)
 
 #define SAVE_INDEXED(name, i, max) \
@@ -363,37 +363,17 @@ io_error_t io_load_song()
     f_lseek(&fat_file, SONG_BYTE_OFFSET);
 
     UINT bytes_get; 
-    fat_result = f_read(&fat_file, &song_length, 1, &bytes_get);
+    fat_result = f_read(&fat_file, &chip_song_cmd[0], SONG_BYTE_LENGTH, &bytes_get);
     if (fat_result != FR_OK)
-    {
-        f_close(&fat_file);
+    {   f_close(&fat_file);
         return IoReadError;
     }
-    if (bytes_get != 1)
-    {
-        f_close(&fat_file);
+    if (bytes_get != SONG_BYTE_LENGTH)
+    {   f_close(&fat_file);
         return IoMissingDataError;
     }
 
-    if (song_length < 16 || song_length > MAX_SONG_LENGTH)
-    {
-        message("got song length %d\n", song_length);
-        song_length = 16;
-        f_close(&fat_file);
-        return IoConstraintError;
-    }
-    
-    fat_result = f_read(&fat_file, &chip_song[0], 2*song_length, &bytes_get);
-    if (fat_result != FR_OK)
-    {
-        f_close(&fat_file);
-        return IoReadError;
-    }
-    if (bytes_get != 2*song_length)
-    {
-        f_close(&fat_file);
-        return IoMissingDataError;
-    }
+    // TODO: maybe check validity (i.e., a wait somewhere)
 
     f_close(&fat_file);
     return IoNoError;
@@ -413,27 +393,13 @@ io_error_t io_save_song()
     f_lseek(&fat_file, SONG_BYTE_OFFSET);
 
     UINT bytes_get; 
-    fat_result = f_write(&fat_file, &song_length, 1, &bytes_get);
+    fat_result = f_write(&fat_file, &chip_song_cmd[0], SONG_BYTE_LENGTH, &bytes_get);
     if (fat_result != FR_OK)
-    {
-        f_close(&fat_file);
+    {   f_close(&fat_file);
         return IoWriteError;
     }
-    if (bytes_get != 1)
-    {
-        f_close(&fat_file);
-        return IoMissingDataError;
-    }
-    
-    fat_result = f_write(&fat_file, &chip_song[0], 2*song_length, &bytes_get);
-    if (fat_result != FR_OK)
-    {
-        f_close(&fat_file);
-        return IoWriteError;
-    }
-    if (bytes_get != 2*song_length)
-    {
-        f_close(&fat_file);
+    if (bytes_get != SONG_BYTE_LENGTH)
+    {   f_close(&fat_file);
         return IoMissingDataError;
     }
 

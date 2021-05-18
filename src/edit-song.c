@@ -48,16 +48,19 @@ uint8_t editSong_offset;
 uint8_t editSong_command_copy;
 uint8_t editSong_command_appears_reachable;
 
-static inline void editSong_save_or_load_all(io_event_t save_or_load);
+static void editSong_save_or_load_all(io_event_t save_or_load);
 
 void editSong_start(int load_song)
 {   if (load_song)
     {   editSong_save_or_load_all(IoEventLoad);
     }
+    else
+    {   chip_song_cmd[0] = SongPlayTracksForCount;
+        chip_song_cmd[1] = SongBreak;
+    }
     editSong_bad = 0;
     editSong_pos = 0;
     editSong_offset = 0;
-    editSong_copying = 0;
     editSong_command_copy = 0;
 }
 
@@ -377,7 +380,7 @@ int _editSong_check()
                     break;
                 case SongBreak:
                     // check for a randomizer behind
-                    if (j > 0 && (chip_song_cmd[j-1]&15) == TrackRandomize)
+                    if (j > 0 && (chip_song_cmd[j-1]&15) == SongRandomize)
                     {}
                     else if (command>>4)
                         return 0;
@@ -405,7 +408,7 @@ int _editSong_check()
                 break;
             case SongBreak:
                 // check for a randomizer behind
-                if (j > 0 && (chip_song_cmd[j-1] & 15) == TrackRandomize)
+                if (j > 0 && (chip_song_cmd[j-1] & 15) == SongRandomize)
                 {}
                 else if (command >> 4)
                     return 0;
@@ -738,6 +741,7 @@ void editSong_line()
             }
             font_render_line_doubled((const uint8_t *)msg, 96, internal_line, 65535, BG_COLOR*257);
             goto draw_song_command;
+        }
         case 13:
             if (!music_editor_in_menu)
             {   font_render_line_doubled((uint8_t *)"X:cut cmd", 96, internal_line, 65535, BG_COLOR*257);
@@ -769,7 +773,6 @@ void editSong_line()
     }
 }
 
-// TODO: play song from current position and play song from start
 void editSong_controls()
 {   if (GAMEPAD_HOLDING(0, select))
     {   if (editSong_bad)
@@ -797,6 +800,7 @@ void editSong_controls()
             return;
         }
 
+        int movement = 0;
         if (GAMEPAD_PRESSING(0, L))
         {   if (chip_volume > 4)
                 chip_volume -= 4;
@@ -823,23 +827,12 @@ void editSong_controls()
 
         if (GAMEPAD_PRESS(0, X))
         {   // load just editSong
-            io_message_from_error(game_message, io_load_song(), IoLoadEvent);
+            io_message_from_error(game_message, io_load_song(), IoEventLoad);
             return;
         }
     }  
     else
     {   // editing, not menu
-        int movement = 0;
-        if (GAMEPAD_PRESSING(0, L))
-            --movement;
-        if (GAMEPAD_PRESSING(0, R))
-            ++movement;
-        if (movement)
-        {
-            uint8_t *memory = &chip_track[editTrack_track][editTrack_player][editTrack_pos];
-            *memory = ((*memory+movement)&15)|((*memory)&240);
-            editSong_check();
-        }
         if (GAMEPAD_PRESSING(0, down))
         {
             if (editSong_pos < 255)
@@ -851,7 +844,8 @@ void editSong_controls()
             {   editSong_pos = 0;
                 editSong_offset = 0;
             }
-            movement = 1;
+            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
+            return;
         }
         if (GAMEPAD_PRESSING(0, up))
         {
@@ -864,18 +858,29 @@ void editSong_controls()
             {   editSong_pos = 255;
                 editSong_offset = 240;
             }
-            movement = 1;
+            gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
+            return;
+        }
+        int movement = 0;
+        if (GAMEPAD_PRESSING(0, L))
+            --movement;
+        if (GAMEPAD_PRESSING(0, R))
+            ++movement;
+        if (movement)
+        {   uint8_t *memory = &chip_song_cmd[editSong_pos];
+            *memory = ((*memory+movement)&15)|((*memory)&240);
+            editSong_check();
+            return;
         }
         if (GAMEPAD_PRESSING(0, left))
-        {   editSong_adjust_parameter(-1);
-            movement = 1;
-        }
+            --movement;
         if (GAMEPAD_PRESSING(0, right))
-        {   editSong_adjust_parameter(+1);
-            movement = 1;
-        }
+            ++movement;
         if (movement)
         {   gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
+            uint8_t *memory = &chip_song_cmd[editSong_pos];
+            *memory = ((*memory)&15)|((*memory + 16*movement)&240);
+            editSong_check();
             return;
         }
 
@@ -885,7 +890,7 @@ void editSong_controls()
             for (int j=editSong_pos; j<255; ++j)
             {   chip_song_cmd[j] = chip_song_cmd[j+1];
             }
-            check_editSong();
+            editSong_check();
             return;
         }
 
@@ -895,7 +900,7 @@ void editSong_controls()
             {   chip_song_cmd[j] = chip_song_cmd[j-1];
             }
             chip_song_cmd[editSong_pos] = editSong_command_copy;
-            check_editSong();
+            editSong_check();
             return;
         }
         
@@ -932,7 +937,7 @@ void editSong_controls()
     }
 }
 
-static inline void editSong_save_or_load_all(io_event_t save_or_load)
+static void editSong_save_or_load_all(io_event_t save_or_load)
 {   io_error_t error;
     if (save_or_load == IoEventSave)
     {   // Split up saving into different pieces;
