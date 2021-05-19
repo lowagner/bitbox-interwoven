@@ -500,7 +500,7 @@ void editSong_line()
     {   case 0:
         {   uint8_t msg[] =
             {   (chip_playing && (track_pos/4 % 2==0)) ? '*' : ' ',
-                's', 'o', 'n', 'g', ' ', 
+                's', 'o', 'n', 'g',
                 ' ', 't', 'r', 'a', 'n', 's', 
                 ' ', '0' + song_transpose/10, '0' + song_transpose%10,
                 ' ', 's', 'p', 'e', 'e', 'd', 
@@ -509,7 +509,7 @@ void editSong_line()
                 ' ', '0' + chip_track_playtime/10, '0' + chip_track_playtime%10,
                 0
             };
-            font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
+            font_render_line_doubled(msg, 12, internal_line, 65535, BG_COLOR*257);
             break;
         }
         case 1:
@@ -867,7 +867,8 @@ void editSong_controls()
         if (GAMEPAD_PRESSING(0, R))
             ++movement;
         if (movement)
-        {   uint8_t *memory = &chip_song_cmd[editSong_pos];
+        {   gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
+            uint8_t *memory = &chip_song_cmd[editSong_pos];
             *memory = ((*memory+movement)&15)|((*memory)&240);
             editSong_check();
             return;

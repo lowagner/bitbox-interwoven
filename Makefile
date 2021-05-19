@@ -10,8 +10,8 @@ DEFINES += VGA_MODE=320
 GAME_C_FILES=$(SRC_FILES:%=src/%.c)
 GAME_H_FILES=$(SRC_FILES:%=src/%.h)
 
-# see this file for options
 BITBOX=bitbox
+# see this file for options
 include $(BITBOX)/kernel/bitbox.mk
 
 src/font.c: src/mk_font.py
