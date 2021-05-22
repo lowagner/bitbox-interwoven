@@ -336,6 +336,8 @@ extern uint8_t chip_song_cmd_index;
 // TODO: preface with chip_ OR put everything here inside a chip struct.
 extern uint8_t song_transpose;
 extern uint8_t song_speed;
+extern uint8_t chip_song_variable_A;
+extern uint8_t chip_song_variable_B;
 
 void chip_init();
 void chip_reset();

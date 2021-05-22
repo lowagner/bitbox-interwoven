@@ -167,7 +167,7 @@ void editSong_render_command(int j, int y)
                 param = 'g';
             break;
         case SongTranspose:
-            cmd = 'T';
+            cmd = 10; // staircase up
             param = hex_character[param];
             break;
         case SongSquarify:
@@ -501,12 +501,12 @@ void editSong_line()
         {   uint8_t msg[] =
             {   (chip_playing && (track_pos/4 % 2==0)) ? '*' : ' ',
                 's', 'o', 'n', 'g',
-                ' ', 't', 'r', 'a', 'n', 's', 
-                ' ', '0' + song_transpose/10, '0' + song_transpose%10,
-                ' ', 's', 'p', 'e', 'e', 'd', 
-                ' ', '0' + song_speed/10, '0' + song_speed%10,
+                ' ', 10, '=', '0' + song_transpose/10, '0' + song_transpose%10,
+                ' ', 'S', '=', '0' + song_speed/10, '0' + song_speed%10,
                 ' ', 't', 'T', 'i', 'm', 'e', 
-                ' ', '0' + chip_track_playtime/10, '0' + chip_track_playtime%10,
+                '=', '0' + chip_track_playtime/10, '0' + chip_track_playtime%10,
+                ' ', 'a', '=', hex_character[chip_song_variable_A],
+                ' ', 'b', '=', hex_character[chip_song_variable_B],
                 0
             };
             font_render_line_doubled(msg, 12, internal_line, 65535, BG_COLOR*257);

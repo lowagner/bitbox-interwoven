@@ -528,7 +528,7 @@ void editTrack_line()
                 ' ', 'P', hex_character[editTrack_player], 
                 ' ', 'I', hex_character[chip_player[editTrack_player].instrument],
                 ' ', 't', 'T', 'i', 'm', 'e', 
-                ' ', '0' + editTrack_track_playtime/10, '0' + editTrack_track_playtime%10,
+                '=', '0' + editTrack_track_playtime/10, '0' + editTrack_track_playtime%10,
             0 };
             font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
             break;
