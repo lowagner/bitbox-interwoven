@@ -349,7 +349,7 @@ void chip_reset_player(int i)
     chip_player[i].fade_behavior = 0;
     chip_player[i].fade_saved_max_volume = 255;
     chip_player[i].fade_saved_min_volume = 0;
-    chip_player[i].track_volume = 0;
+    chip_player[i].track_volume = 255;
     chip_player[i].track_volumed = 0;
     chip_player[i].track_inertia = 0;
     chip_player[i].track_vibrato_rate = 0;
@@ -379,18 +379,28 @@ void chip_play_song(int pos)
         chip_reset_player(i);
 }
 
-void chip_play_track(int track, int playtime)
-{   // Makes all players play the passed-in track.
+void chip_play_track(int track, int which_players)
+{   // Makes all players loop the passed-in track.
     // If track >= MAX_TRACKS, no track will be played.
+    // If which_players == 0, everyone plays, otherwise use a bit mask
+    // for which players should play (via 1 << player_index).
     chip_reset_song();
     chip_playing = PlayingTrack;
-    chip_track_playtime = playtime;
+    if (which_players == 0)
+        which_players = (1 << CHIP_PLAYERS) - 1;
 
     for (int i=0; i<CHIP_PLAYERS; ++i)
     {   // Make the players loop on this track.
         chip_reset_player(i);
-        chip_player[i].next_track_index = track;
-        chip_player[i].track_index = track;
+        if (which_players & 1)
+        {   chip_player[i].next_track_index = track;
+            chip_player[i].track_index = track;
+        }
+        else
+        {   chip_player[i].track_index = MAX_TRACKS;
+            chip_player[i].next_track_index = MAX_TRACKS;
+        }
+        which_players >>= 1;
     }
 }
 

@@ -343,7 +343,7 @@ void chip_init();
 void chip_reset();
 void chip_kill();
 void chip_play_song(int pos);
-void chip_play_track(int track, int playtime);
+void chip_play_track(int track, int which_players);
 // TODO: chip_snapshot() and chip_restore() if people want to make a broken record sound
 
 // play a note of this instrument now - useful for SFX !

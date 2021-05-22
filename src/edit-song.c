@@ -51,14 +51,14 @@ uint8_t editSong_command_appears_reachable;
 static void editSong_save_or_load_all(io_event_t save_or_load);
 
 void editSong_start(int load_song)
-{   if (load_song)
+{   editSong_bad = 0;
+    if (load_song)
     {   editSong_save_or_load_all(IoEventLoad);
     }
     else
     {   chip_song_cmd[0] = SongPlayTracksForCount;
         chip_song_cmd[1] = SongBreak;
     }
-    editSong_bad = 0;
     editSong_pos = 0;
     editSong_offset = 0;
     editSong_command_copy = 0;
@@ -723,7 +723,7 @@ void editSong_line()
             {   msg = "A:save to file";
             }
             else if (chip_playing)
-            {   msg = "A:stop song";
+            {   msg = "A/B:stop playing";
             }
             else
             {   msg = "A:play song from start";
@@ -736,7 +736,7 @@ void editSong_line()
             if (music_editor_in_menu)
             {   msg = "B:load from file";
             }
-            else
+            else if (!chip_playing)
             {   msg = "B:play song from here";
             }
             font_render_line_doubled((const uint8_t *)msg, 96, internal_line, 65535, BG_COLOR*257);
@@ -993,4 +993,5 @@ static void editSong_save_or_load_all(io_event_t save_or_load)
         message("invalid save_or_load for editSong_save_or_load_all()\n");
 
     game_set_message_with_timeout(NULL, 1000);
+    editSong_check();
 }

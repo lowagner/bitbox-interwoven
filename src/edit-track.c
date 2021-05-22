@@ -16,7 +16,6 @@
 #define MATRIX_WING_COLOR (RGB(30, 90, 90) | (RGB(30, 90, 90)<<16))
 #define NUMBER_LINES 20
 
-uint8_t editTrack_track_playtime;
 uint8_t editTrack_track;
 uint8_t editTrack_pos;
 uint8_t editTrack_offset;
@@ -38,7 +37,8 @@ enum
 uint8_t editTrack_menu_index;
 
 void editTrack_init()
-{   editTrack_track_playtime = 32;
+{   if (!chip_track_playtime)
+        chip_track_playtime = 32;
     editTrack_track = 0;
     editTrack_pos = 0;
     editTrack_offset = 0;
@@ -528,7 +528,7 @@ void editTrack_line()
                 ' ', 'P', hex_character[editTrack_player], 
                 ' ', 'I', hex_character[chip_player[editTrack_player].instrument],
                 ' ', 't', 'T', 'i', 'm', 'e', 
-                '=', '0' + editTrack_track_playtime/10, '0' + editTrack_track_playtime%10,
+                '=', '0' + chip_track_playtime/10, '0' + chip_track_playtime%10,
             0 };
             font_render_line_doubled(msg, 16, internal_line, 65535, BG_COLOR*257);
             break;
@@ -770,28 +770,26 @@ void editTrack_line()
         }
         case 11:
             if (music_editor_in_menu)
-            {
-                if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
+            {   if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
                     font_render_line_doubled((uint8_t *)"A:cancel copy", 96, internal_line, 65535, BG_COLOR*257);
                 else
                     font_render_line_doubled((uint8_t *)"A:save to file", 96, internal_line, 65535, BG_COLOR*257);
             }
             else if (chip_playing)
-                font_render_line_doubled((uint8_t *)"A:stop track", 96, internal_line, 65535, BG_COLOR*257);
+                font_render_line_doubled((uint8_t *)"A/B:stop playing", 96, internal_line, 65535, BG_COLOR*257);
             else
                 font_render_line_doubled((uint8_t *)"A:play track", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 12:
             if (music_editor_in_menu)
-            {
-                if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
+            {   if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
                     font_render_line_doubled((uint8_t *)"B/X:\"     \"", 96, internal_line, 65535, BG_COLOR*257);
 
                 else
                     font_render_line_doubled((uint8_t *)"B:load from file", 96, internal_line, 65535, BG_COLOR*257);
             }
-            else
-                font_render_line_doubled((uint8_t *)"B:edit instrument", 96, internal_line, 65535, BG_COLOR*257);
+            else if (!chip_playing)
+                font_render_line_doubled((uint8_t *)"B:play track from here", 96, internal_line, 65535, BG_COLOR*257);
             goto maybe_show_track;
         case 13:
             if (music_editor_in_menu)
@@ -846,7 +844,9 @@ void editTrack_controls()
         else if (GAMEPAD_PRESS(0, left))
             game_switch(ModeEditSong);
         else if (GAMEPAD_PRESS(0, right))
+        {   editInstrument_instrument = chip_player[editTrack_player].instrument % 16;
             game_switch(ModeEditInstrument);
+        }
         return;
     }
 
@@ -884,11 +884,11 @@ void editTrack_controls()
                     editTrack_player = (editTrack_player+switched)&3;
                     break;
                 case EditTrackMenuTrackLength:
-                    editTrack_track_playtime += switched * 4;
-                    if (editTrack_track_playtime > 64)
-                        editTrack_track_playtime = 64;
-                    else if (editTrack_track_playtime < 16)
-                        editTrack_track_playtime = 16;
+                    chip_track_playtime += switched * 4;
+                    if (chip_track_playtime > 64)
+                        chip_track_playtime = 64;
+                    else if (chip_track_playtime < 16)
+                        chip_track_playtime = 16;
                     break;
             }
             gamepad_press_wait[0] = GAMEPAD_PRESS_WAIT;
@@ -926,16 +926,12 @@ void editTrack_controls()
         }
 
         if (GAMEPAD_PRESS(0, Y)) // paste
-        {
-            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
-            {
-                // paste
-                uint8_t *src, *dst;
+        {   if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
+            {   uint8_t *src, *dst;
                 src = &chip_track[editTrack_copying/4][editTrack_copying%CHIP_PLAYERS][0];
                 dst = &chip_track[editTrack_track][editTrack_player][0];
                 if (src == dst)
-                {
-                    editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
+                {   editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
                     game_set_message_with_timeout("pasting to same thing", MESSAGE_TIMEOUT);
                     return;
                 }
@@ -952,10 +948,8 @@ void editTrack_controls()
         if (GAMEPAD_PRESS(0, B))
             save_or_load = IoEventLoad;
         if (save_or_load)
-        {
-            if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
-            {
-                // cancel a copy 
+        {   if (editTrack_copying < CHIP_PLAYERS * MAX_TRACKS)
+            {   // cancel a copy 
                 editTrack_copying = CHIP_PLAYERS * MAX_TRACKS;
                 game_message[0] = 0;
                 return;
@@ -1068,32 +1062,36 @@ void editTrack_controls()
             return;
 
         if (GAMEPAD_PRESS(0, A))
-        {
-            // play all instruments (or stop them all)
+        {   // play track from beginning (or stop playing)
             track_pos = 0;
             if (chip_playing)
-            {
-                message("stop play\n");
+            {   message("stop play\n");
                 chip_kill();
             }
             else
-            {
-                // play this instrument track.
-                // after the repeat, all tracks will sound.
-                chip_play_track(editTrack_track, editTrack_track_playtime);
-                // avoid playing other instruments for now:
+            {   // play this instrument track.
+                chip_play_track(editTrack_track, 0);
+                // avoid having other players play for now;
+                // after the repeat, all players will play the track.
                 for (int i=0; i<editTrack_player; ++i)
                     chip_player[i].track_cmd_index = MAX_TRACK_LENGTH;
-                for (int i=editTrack_player+1; i<4; ++i)
+                for (int i=editTrack_player+1; i<CHIP_PLAYERS; ++i)
                     chip_player[i].track_cmd_index = MAX_TRACK_LENGTH;
             }
             return;
         }
         
         if (GAMEPAD_PRESS(0, B))
-        {
-            editInstrument_instrument = chip_player[editTrack_player].instrument;
-            game_switch(ModeEditInstrument);
+        {   // play track from here, just this track and player
+            if (chip_playing)
+            {   message("stop play\n");
+                chip_kill();
+            }
+            else
+            {   // play this instrument track with this player only
+                chip_play_track(editTrack_track, 1 << editTrack_player);
+                chip_player[editTrack_player].track_cmd_index = editTrack_pos;
+            }
             return;
         }
     }
