@@ -330,7 +330,7 @@ void chip_init()
     chip_volume = 128;
     chip_reset_song();
     // we assume it's 256 so that wrap around works immediately with u8's:
-    static_assert(MAX_SONG_LENGTH == 256);
+    STATIC_ASSERT(MAX_SONG_LENGTH == 256);
 }
 
 void chip_reset_player(int i)

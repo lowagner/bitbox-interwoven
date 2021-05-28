@@ -302,12 +302,12 @@ static inline void physics_add_static_collision(uint8_t index, uint8_t other)
     // allowed to go through the static entity:
     if (collision->impulse.direction % 2)
     {   // impulse is in a negative direction
-        static_assert(DirectionMinusX % 2 == 1);
-        static_assert(DirectionMinusY % 2 == 1);
-        static_assert(DirectionMinusZ % 2 == 1);
-        static_assert(DirectionMinusX / 2 == 0);
-        static_assert(DirectionMinusY / 2 == 1);
-        static_assert(DirectionMinusZ / 2 == 2);
+        STATIC_ASSERT(DirectionMinusX % 2 == 1);
+        STATIC_ASSERT(DirectionMinusY % 2 == 1);
+        STATIC_ASSERT(DirectionMinusZ % 2 == 1);
+        STATIC_ASSERT(DirectionMinusX / 2 == 0);
+        STATIC_ASSERT(DirectionMinusY / 2 == 1);
+        STATIC_ASSERT(DirectionMinusZ / 2 == 2);
         // negative impulse means we need to reduce max boundary
         // (reducing the min boundary would make the dynamic_boundary bigger):
         dynamic_boundary->corner_max[collision->impulse.direction / 2]
@@ -315,12 +315,12 @@ static inline void physics_add_static_collision(uint8_t index, uint8_t other)
     }
     else
     {   // impulse is in a positive direction
-        static_assert(DirectionPlusX % 2 == 0);
-        static_assert(DirectionPlusY % 2 == 0);
-        static_assert(DirectionPlusZ % 2 == 0);
-        static_assert(DirectionPlusX / 2 == 0);
-        static_assert(DirectionPlusY / 2 == 1);
-        static_assert(DirectionPlusZ / 2 == 2);
+        STATIC_ASSERT(DirectionPlusX % 2 == 0);
+        STATIC_ASSERT(DirectionPlusY % 2 == 0);
+        STATIC_ASSERT(DirectionPlusZ % 2 == 0);
+        STATIC_ASSERT(DirectionPlusX / 2 == 0);
+        STATIC_ASSERT(DirectionPlusY / 2 == 1);
+        STATIC_ASSERT(DirectionPlusZ / 2 == 2);
         // positive impulse means we need to increase min boundary
         // (increasing the max boundary would make the dynamic_boundary bigger):
         dynamic_boundary->corner_min[collision->impulse.direction / 2]

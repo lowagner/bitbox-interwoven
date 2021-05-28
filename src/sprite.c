@@ -11,8 +11,8 @@ struct sprite sprite[MAX_SPRITES] CCM_MEMORY;
 void sprite_init()
 {   // setup the sprites to have the correct free linked list.
     LL_RESET(sprite, next_to_draw, previous_to_draw, MAX_SPRITES);
-    static_assert(ShapeCount <= 256);
-    static_assert(MAX_SPRITES <= 256);
+    STATIC_ASSERT(ShapeCount <= 256);
+    STATIC_ASSERT(MAX_SPRITES <= 256);
 
     // Set the palette to something reasonable.
     static const uint16_t colors[16] = {
